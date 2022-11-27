@@ -535,3 +535,59 @@ This focuses on the layer 3 header. Thus the focus is on the packets
 13. Options: 0-320 bits. If IHL is greater than 5, optins are present. Allows for more interfacing for special cases
     
 Remember, an IP packet is enclosed in a layer 2 (ethernet maybe) protocol as well. Thus, it would also include the ethernet header and trailer
+
+## static Routing 
+WAN: a network spread over a large area
+
+Every router interface has its own IP address to be accessed from the network it connects to
+
+### routing
+a host will ask these questions:
+1. is the destination ip address in the same LAN as me?
+2. if it is, you can forward directly to the client
+3. if it is not in the same LAN, forward to the default gateway, the device the host forwards data destined for another network to. Routers are usually the gateway, through the interface IP
+4. now the router has the packet, and it will compare the destination IP to the routing table. Each router has a routing table that stores a list of destinations and routes to those destinations. 
+5. if it is already in the routing table, it will send the packet via an interface directly to the router, and via any hops in between the source and destination networks. 
+6. The source router forwards the packet to the next router in the route. That router follows the same process as the first router, checks its IP table, and forwards to the next hop in the route. 
+
+at each stage, the router compares the destination IP to its routing table, and ecides whether it needs a hop, or can directly connect to the destination IP network.
+
+### what is the /32?
+a /32 mask represents a single specific host on a network, like a PC. A pc on network 192.168.0.0/24 would have an IP of 192.168.0.54/32, but usually we just say 192.168.0.54.
+
+To reiterate, local route is the actual IP address of the interface, and the connected route is the IP the network the interface is a member of
+
+The ip address configured on a router interface will appear as a local route, /32. The IP address you assign the router is relative to the LAN, and thus is local. That is how clients will access the router?
+### Managing routes with cisco systems
+1. "show ip route" shows the ip routing table. L stands for local network, and C stands for connected network.  
+2. if an address like 192.168.1.2 is a destination for a packet, and 192.168.1.0/24, the source router knows where to route because the network portions are the same
+3. connected route: network the interface is connected to 
+4. local route: the actual IP address on the interface
+5. when you configure an IP, its connected and local routes are created
+
+#### Configure gateway of last resort
+1. to configure a gaeway of last resort you must configure a default route, which matches all possible destinations. It is used only if a more specific route match isnt found in the routing table. The default route is the least specifric route possible
+2. it is used only if a more specifric (lan based) route is not found
+3. the default route is the least specific possible, IP address of 0.0.0.0/0 and mask of 0.0.0.0. THis is what we should set the gateway of last resort. This is the range of all possible addresses
+   
+* this is because 0.0.0.0/0 has no network octets. All octets are variable. All btis are not fixed.
+
+##### so how do we configure the static route?
+* local and connected routes are automatic. 
+* to configure a route, "ip route (destination-address) (mask) (next hop)". I give this packet to you, you deal with the route.
+* ip route 0.0.0.0 0.0.0.0 (router interface IP address)
+* the next hop will figure out how to get the packet where it needs to go
+* ROUTERS WILL DROP PACKETS WITH UNKNOWN DESTINATIONS. THEY WILL NEVER FLOOD
+* unless we configure our routes (or do dynamic routing, later), we cannot send packets to unknown destinations, eg dstinations not in the routing table
+* How do we get around this? This command: "ip route (destination IP) (mask) (exit-interface). Instead of next hop we specify exit interface. where should we send packets as a route of last resort? to whatever is at the end of the interface. Gateway of last resort is not added however, because this is for specifric networks. But what does this mean? it is technically a direct connection to the destination IP. It is basically saying, "I will give this packet to whatever is connected on this interface, and they will route it where it needs to go". And so, when the packet gets to the router on the connected interface, its own routing will carry out the rest of the work.
+* "via" usually refers to interface. Get to network IP via interface IP
+
+there might be a problem however, one way reachability. Source can send packets, but without more static routing, the destination cannot send a reply. 
+
+what does it mean when a router looks for most specific matching route. It looks for the destination with longest prefix length.  
+
+in short, if a router can route to 192.168.4.254 through either 192.0.0.0/8 or 192.168.4/24, it will do soi through the latter, because it is more specific (more network octets)
+
+THIS IS VERY IMPORTANT FOR CCNA TEST
+
+remember, you can use scapy for manual packet crafting
