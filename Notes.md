@@ -379,10 +379,10 @@ preamble and SFD are usually not ocnsidered part of the ethernet header. Thus th
 ### IPV4 classes
 Every IPV4 address has a class, determined by the first octet of the address. This refers to the binary octet. 
 
-CLASS          FIRST OCTET      NUMERIC RANGE     PREFIX LENGTH      # hosts
-A              0xxxxxxx         1-126            /8                 16777214  
-B              10xxxxxx         128-191           /16                65536
-C              110xxxxx         192-223           /24                256
+CLASS          FIRST OCTET      NUMERIC RANGE     PREFIX LENGTH      # hosts uysable
+A              0xxxxxxx         1-126             /8                 16777214  2^(32-8) - 2
+B              10xxxxxx         128-191           /16                65534  2^(32-16) - 2
+C              110xxxxx         192-223           /24                253  2^(32-24) - 2
 D              1110xxxx         224-239 # reserved for multicast addressing. Separated from unicast and broadcas
 E              1111xxxx         240-255 # reserved for experiments
 
