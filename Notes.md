@@ -588,11 +588,218 @@ what does it mean when a router looks for most specific matching route. It looks
 
 in short, if a router can route to 192.168.4.254 through either 192.0.0.0/8 or 192.168.4/24, it will do soi through the latter, because it is more specific (more network octets)
 
+at every stage of the routing process, a new ethernet frame with a new src mac address is added. IP header, however, remains unchanged
+ 
 THIS IS VERY IMPORTANT FOR CCNA TEST
 
 remember, you can use scapy for manual packet crafting
 
-## Life of a packet
-a comprehensive overview of everything learned so far
+## Subnetting
+huge topic for ccna, and network engineering
 
-assuming preconfigured static routes
+### CIDR Classification
+Dynamic, instdead of static IP class ranged.
+* previously we had a b c d and e class IP addresses.
+* We are doing away with that, in favor of CIDR
+* With the older, static ip classification system, how does an organization get an assigned IP? the IANA internet assigned numbers authority helps out. Assigns ipv4 addresses to companies based on size
+* for example, very large company might receive a class A or class b network, while a small company might receive a class C network
+* this was wasteful, so new methods are available. Even point to point networks, that include 2 nodes need their own network IP address, which means lots of addresses in that network range go unused. 2 nodes with their own IP, you waste 252 addresses
+* take company x, which needs 5000 end hosts. Problem? Class C network doesnt provide enough addresses, so class B network must be assigned. 60000 addresses are wasted
+* there are manby more examples. Total ipv4 address space is 4 billion. This seemed like a lot, but creators did not predict the size of the internet
+* The IETF (internet engineering task forc) introduced CIDR
+  
+#### With CIDR...
+* class A /8, Class B/16, class C/24 requriements were removed
+* thus larger networks could be split into smaller networks, subnetworks, or subnets
+* with CIDR, we can say a network has a /25 or /30 network portion of the address, so that we dont use so much address space per network
+
+say we have a network of netmask 255.255.255.0
+
+in binary, that is
+
+11111111.11111111.11111111.00000000
+
+if we want to use cidr, and have the network portion be 25 bits, we just do this to the netmask
+
+11111111.11111111.11111111.10000000
+
+the new netmask in dotted decimal is 255.255.255.128
+
+since there are now only 7 bits in the host portion of the address, the number of usable addresses according to the 2^n - 2 formula is 126
+
+for instance, a /30 network has only 2 usable host addresses
+
+the remaining addresses in the address block are available to be used in other subnets! we can break down large networks into smaller ones.
+
+#### More efficient?
+* a .254 address has 0 usable host addresses. Used to be impossible to use, however for a point to point network, you can do this!
+* it contains only the network address and the broadcast addresses. 
+* when there is just a connection between two addresses, however, there is just a point to point connection, the broadcast and network addresses are dropped, and the two remaining addresses become host addredsses
+* /31 masks are more efficient for p2p connections
+
+#### what of the /32 mask?
+* -1 usable addresses?
+* probably you will never use these. What if you cant to create a static route to a single host however?
+* a /32 mask can be used to identify a static host IP address
+
+### Chart of CIDR notation
+Dotted Decimal          CIDR Notation   Subnets     num hosts     num borrowed bits
+255.255.255.128         /25             1           126           1
+255.255.255.192         /26             4           62            2
+255.255.255.224         /27             8           30            3
+255.255.255.240         /28             16          14            4
+255.255.255.248         /29             32          6             5
+255.255.255.252         /30             64          2             6
+255.255.255.254         /31             128         0(2)          7
+255.255.255.255         /32             254         0(1)          8
+
+we will also look at subnetting for class b and a addresses
+
+number of subnets = 2^x
+x = number of borrowed bits, bits of the last octet assigned to the subnet address
+
+### Subnetting trick:
+
+the last octet of a /26 address can be represented as such:
+
+NET  Host
+00 | 000000
+the value of the last bit in the network portion of the octet is 64. So to find the next subnet's network address, just add 64.
+
+Thus the network addresses of the subnets on this octet are 0, 64, 128, and 192
+
+the same process can be used for class A and B networks
+
+### VSLM
+variable length subnet masks
+
+so far we have used fixed length subnet masks. This means that all subnets use the same prefix length
+
+* VLSM is the proces of creating subnets of different sizes to make your use of netwiork addresses more efficient
+* we can assign different subnet sizes to different lans, to maximize space efficiency
+* VLSM steps
+
+1. assign the largest subnet at the start of the address space
+2. assign the second largest subnet after it
+3. repeat process until all subnets have been assigned
+
+remember, wehn subnetting the binary form of the address is much more important than the decimal form 
+
+## VLANs
+extremely important
+
+### What is a lan?
+* LAN is local area network
+* group of devices all connected in a location
+* A LAN is a single broadcast domain including all devices in that broadcast domain
+* a broadcast domain is the group of devices which receive a braodcast frame of the broadcast mac address sent by any one of lan members
+* usually broadcast domains are contained in the interface of a router
+* broadcast domains also exist in p2p networks, with only 2 clients.
+
+So what is a VLAN???
+
+what if you want to break up a broadcast domain into several smaller broadcast domains?
+if we od this, we can limit access to different segments of that broadcast domain to improve security
+lots of unecessary broadcast traffic also reduces network performance
+
+this can all be done with subnets, so where do VLANs come in?
+
+subnets each require their own router interface. Thus, for every subnet, we need an additional connection to the router.
+That means that if we try to send a message from one subnet to another, it goes through the network switch, into the router interface, out another interface, and to the desired subnet
+
+but what if we send a broadcast frame? The switch still broadcasts it on all interfaces. A switch is only aware of layer 2 information, and doesnt care about the subnets. The subnets are not seperated at layer 2, the broadcast domain.
+
+One option is to buy a switch for every department. Thats expensive and inefficient
+
+we can use vlans to seperate subnets at layer 2
+
+### How do we assign VLANs?
+switch interfaces
+
+1. configure switch interface to a vlan
+2. each vlan will be considered a separate lan, and so traffic will not be forwarded between them
+3. if a broadcast packet comes from vlan10, it will only broadcast to vlan10 
+4. the router performs all inter vlan routing. The router still needs one interface for vlan/subnet
+5. if a frame is destined for another vlan, it goes to the default gateway first
+
+so: vlans seperate hosts at layer 2
+
+they are configured on a per interface basis
+
+switches do not forward traffic directly between hosts in different vlans
+
+### VLAN configuration
+remember, vlans are configured by interface
+
+process:
+1. show vlan brief, shows vlans and their interfaces
+2. interface range g1/0 - 3 (example) to enter configuration to configure several interfaces at once
+3. then run command switchport mode access to set the interface as an access port. This means that it belongs to a single vlan, and connects to end hosts. This is as opposed to a trunk port, which carries multiple vlans. Good to explicitly specify port type
+4. then run switchport access vlan (vlan number). if the select vlan doesnt exzist, it will create the vlan
+5. You can also change the default name of a vlan
+6. vlan (vlan number) accesses a vlan. You can then do name (name)
+
+remember, there are 5 default vlans in each switch that cant be deleted
+
+There is still much more needed to use vlans effectively, however
+
+if you have two switches which have some shared VLANs, the inter switch vlan connection needs a cable for each interface
+
+on smaller networks, using a separate interface for each vlan is possible. However, as networks scale up and number of VLANs also increases, this is impractical
+
+you can use trunk ports to operate several vlans on one interface
+
+### Trunk Ports
+* a trunk port allows for multiple vlan's traffic to travel over an interface. Good for communicating with a router, or between switches using vlans
+* how does the switch or router knows which vlan a packet is part of?
+* switches will tag all frames they send over a trunk link. This allows the receiving switch to know which vlan the frame belongs to
+* trunk ports = tagged ports
+* access ports = untagged ports
+
+### Vlan tags
+2 main types:
+* ISL: old cisco proprietary protocol
+* IEEE 802.1Q INdustry standard protocol
+* 802.1Q is inserted between the source mac address and type/length field of the ethernet frame header.
+* the tag is 4 bytes, or 32 bits in length
+* the tag consists of the tag protocol identifier, and the tag control information, TPID and TCI
+* TCI consists of 3 sub fields: PCP, DEI, and VID
+* TPID Field: 2 bytes, always set to 0x8100, indicates that the frame was 802.1Q-tagged
+* PCP, priority code point, 3 bits in length, class of service which prioritizes important traffic in congested networks
+* DEI: drop eligible indicator. If network is congested, can this frame be dropped?
+* VID: VLAN ID: 12 bits, identifies VLAN the frame belongs to. because this is 12 bits, there can be a total of 4096 vlan. the first and last vlans are reserved, thus the range is 1-4094
+* anything past 1006 on the vlan list is an extended vlan, some older devices cant use the extended vlan list
+
+### Native VLAN
+* only a feature of 802.1Q
+* VLAN 1 by default on all truk ports, however this can be manually configured on each trunk port
+* The switch does not add an 802.1Q tag to frames in the native vlan
+* when a switch receives an untagged frame on a trunk port it assumes the frame belongs to the native VLAN. Very important the native VLAN matches
+* basically, it sets a default vlan. If this frame does not have a VLAN id, by default you should send it to this vlan. 
+* when vlan mismatching, the frame isnt forwarded because the target doesnt exist in the desired vlan
+* if a switch receives a frame that is tagged for the native vlan, it is dropped, since native vlan frames should not have a VID attached
+
+### configuration
+1. enter interface mode
+2. switchport mode trunk
+3. if you get a trunk encapsulation error, you must first set encapsulation to 802.1Q to manually change encapsulation type
+4. switchport trunk encapsulation dot1q, to set 802.1Q
+5. switchport mode trunk (to set the mode to trunk)
+6. show interfaces trunk to see trunk interfaces that are trunked
+7. switchport trunk allowed vlan 10,30 (tells the switch what vlans to trunk)
+8. switchport trunk allowed vlan add 20 (add a vlan to the list of allowed trunk vlans)
+9. switchport trunk allowed vlan all
+10. switchport trunk allowed vlan except 10 (all vlans except this one)
+11. switchport trunk allowed vlan none (no vlans allowed)
+12. for security purposes it is best to change the native vlan to an unused vlan. This must match between switches
+13. switchport trunk native vlan 1001
+14. remember, to make a vlan a trunk, you must create it first
+
+### Router on a stick ROAS
+* what is this? A new method of inter-vlan routing
+* only one interface connected to the network router for all vlans
+* one physical interface to function as multiple. WE are basically making sub interfaces
+* first, enable interface with no shutdown
+* interface g0/0.(vlan number)
+* encapsulation dot1q (vlan number)
+* ip address (sub-net sub-interface address) (netmask)
