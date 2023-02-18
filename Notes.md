@@ -733,7 +733,7 @@ remember, vlans are configured by interface
 
 process:
 1. show vlan brief, shows vlans and their interfaces
-2. interface range g1/0 - 3 (example) to enter configuration to configure several interfaces at once
+2. interface range g1/0,g2/0(example) to enter configuration to configure several interfaces at once
 3. then run command switchport mode access to set the interface as an access port. This means that it belongs to a single vlan, and connects to end hosts. This is as opposed to a trunk port, which carries multiple vlans. Good to explicitly specify port type
 4. then run switchport access vlan (vlan number). if the select vlan doesnt exzist, it will create the vlan
 5. You can also change the default name of a vlan
@@ -803,3 +803,762 @@ you can use trunk ports to operate several vlans on one interface
 * interface g0/0.(vlan number)
 * encapsulation dot1q (vlan number)
 * ip address (sub-net sub-interface address) (netmask)
+* remember, this needs trunk port on the connected switch, which trunks all vlans
+
+### Using native vlan on a router
+#### 2 methods
+1. encapsulation dot1q (vlan-id) native, tells the router this is a native vlan, assume untagged frames belong to native vlan. Then assign ip address to the subinterface
+2. dont use a subinterface, just use the physical interface for the native vlan
+
+### Multilayer switch
+* a multilayer switch can operate at layer 3, the ip layer. the symbol looks like the sun, with arrows pointing out
+* multilayer switch can route and switch
+* you can configure routed ports which act like router interfaces
+* you can create virtual interfaces for each vlan and assign ip addresses to those interfaces
+* you can configure routes
+* can be used for inter-vlan routing
+* SVI: switch virtual interface, virtual interfaces you can assign IPs to in a multilayer switch. Configure each pc to use the SVI not the router as gateway
+* to send traffic to diffrerent subnets, send frames to the multilayer switch.
+* we can also configure physical ports on the multilayer switch to have IPs, and configure a static route. Thus, we can redirect extra-lan bound traffic to the router, and the internet
+
+### Configuring multilayer switch
+#### Router side
+* do show run to show sub interfaces, and then do show ip interface brief
+* get rid of all router subinterfaces using no interface g0/0.x
+* then do default interface (interface) to specify default routing interface
+* then enter interface configuration mode, and set the ip for the p2p connectio between the multilayer switch and router. The subnet mask should be 255.255.255.252
+#### Switch side
+* enbable default interface to the router using default interface (interface connected to router)
+* enable ip routing using "ip routing" which allows to build IP table. without this intervlan routing wont work
+* enter selected interface
+* then in the interface, run "no switchport", so that the port becomes a layer 3 routed port
+* configure the ip address as you would on any router to correspond with the p2p connection
+* then on the switch, set the default route, ip route 0.0.0.0 0.0.0.0 (router ip)
+* thyen do show interfaces status, in order to check the interface works
+
+### SVI config
+* on the switch
+* interface vlan (vlan number)
+* assign ip address to the interface like normal, ip adddress x.x.x.x subnetmask
+* then run no shutdown to enable the interface
+#### conditions to work
+* vlan must be created first, it must exist on switch. Switch doesnt automatically create vlan when you make an svi for it
+* the switch must have at least one access port in the vlan in an up up state and or one trunk port that allows the vlan that is in an up up state
+* the vlan must not be shutdown. You cannot use the shutdown command to disable vlans
+* SVI must not be shutdown
+* remember to use no shutdown after creation!
+
+## DTP and VTP 
+#### what are these?
+* DTP: Dynamic Trunking Protocol
+* VTP: VLAN trunking protocol
+
+### DTP
+* Cisco proprietary protocol used to allow sswitches to dynbamicaly determine their interface status without manual config
+* DTP is enabled by default on all cisco switch interfaces
+* so far we have been using mnaual switchport configuration
+* however, for security, manual configuration is recommended, since DTP can be exploited by attackers
+* to enable dtp, do switchport mode dynamic auto/desireable when in interface config mode
+* In dynamic desireable mode will actively try to form a trunk with other cisco switches. It will form a trunk if connected to another switchport when it is in trunk mode, or dynamic desireable/auto mode. This is DTP negotiation. It will do its best to form a trunk, unless the other switch interface is in access mode, in which case it will autonegotiate to access
+* show interfaces (interface) switchport shows the settings for a selected interface switchport
+* in dynamic auyto mode, it will not actively try to form a trunk with other switches. However, it will form a trunk if the connected switch port is in trunk mode, or is seeking actively to form a trunk connectiuon. If it encounters another auto mode, it will form an access connection.
+* if there is a mode mismatch, the traffic will nto flow
+* dtp will not trunk with a router or pc. Trunks for ROAS must be manually configured
+* to disable autonegotiation, you can say switchport nonegotiate
+* remember, manual configuration is always better for this!
+
+* another feature of DTP is negotiation of encapsulation type. THis is enabled by default
+* to set autonegotiation for encapsulation, run switchport trunk encapsulation negotiate
+* DTP frames are sent in vlan1 when using isl, or in native vlan when using 802.1q
+* if both cisco switches suppoort ISL, isl is preferred, so manual configuration is better
+* do this with switchport trunk encapsulation dot1q
+
+### VTPe
+* VTP allows configuration of VLANs on a central VTP server switch, whereafter other switches, VTP clients will synchronize their VLAN datrabase to the server
+* designed for large networks with vlans to reduce burden of manual configuration
+* not recommended to use, rarely used
+* 3 versions, 1 2 and 3
+* most modern cisco switches support all 3
+* 3 vtp modes, server, client, and transparent
+* switches operate in server mode by default
+* vtp servers: add modify and delete vlans. Store vlan database in non volatile ram, nvram, so changes save when shutdown. Increase revision number every time vlan database changed. will advertise latest version of vlan database on the trunk interfacesm, and the vtp clients will synchronize to it
+* VTP servers also function as VTP clients. VTP servers will synchronize to other VTP servers with a higher revision number
+* VTP clients: cannot add modify or delete vlans. do not store vlan database, except in vtpv3. Synchronize their vlan database to the sergver with the highest number in their vtp dfomain
+* advertize their vlan databse and forward vtp advertisements to other clients over the trunk ports
+* to change mode, do vtp mode (server/client/transparent)
+
+### How does this work?
+* show vtp status to show vtp information. by default switches run vtp version 1.
+* If we want to synchronize switches in VTP, we must put them all under same vtp domain name
+* to change vtp domain name, do vtp domain cisco
+* if vtp switch with null domain receives advertisement, it automatically joins that domain
+* if a swith receives a vtp advertisement in the same vtp domain witha higher revision number, it will update its vlan database to match
+* danger of VTP: If you connect an old switch with a higher revision number to your network and the vtp domain name mathes, all switches in the domain will sync their vlan databases to that switch, and destroy everything
+
+### VTP Transparent mode
+* does not participate in the vtp domain, and does not sync to the database
+* maintains its own vlan database in nvram it can add, modify, delete vlans but they wont be advertised omnother switches
+* will forward VTP advertisements to other VTP switches, if its in the same domain
+
+### VTP version configuration
+* to change vtp version, use vtp version command
+* vtp version (1-3)
+* vtp1 v vtpv2. only major difference is that v2 has support for token ring vlans, otherwise there is no reason to use v2
+* token ring is an old technology
+* v3 has quite a few new features, but not that important
+
+remember, whoever has highest revision number will push changes 
+to reset revision number to 0, you can:
+* change vtp domain to unused domain name
+* change the switch to vtp transparent mode
+
+## Spanning Tree Protocol, STP
+extremely important
+
+### Redundancy
+* essential, nonrenduntant networks are not acceptab;le
+* modern networks must run all the time. Even a short downtime can be disastrous
+* if one network component fails, you must ensure that other component will take over with little or no downtime
+* as much as possible you must implememtn redundancy to remain resilient to failure
+* you should reduce the danger of POF, points of failure. Chokepoints in a network are not good
+* unfortuantely, most PCs only have a single network interface card, NIC, so they only have one available point of failure
+
+Spanning tree allows network redundancy, a layer 2 protocol
+
+### danger of not using STP
+#### Broadcast storms
+* when you send an ARP request, it is a broadcast frame. Thus, switches will broadcast this frame. If 3 switches are arranged in a triangle, as is a good idea for redundancy, flooded packets will go into an infinite loop in the triangle.
+*  ethernet frames dont have a ttl field, so the frames will cycle indefinitely. Eventually the network will be clogged
+*  traffic isnt the only problem, when a switch continuously receives a frame from the same source, it causes mac address flapping. The source address is continuously updated in the mac address table
+*  STP is *an* answer to the problem
+
+### What is stp?
+* classis STP, IEEE 802.1D
+* switches from all vendors run STP by default
+* STP prevents layer 2 loops by placing redundant ports in a blocking state. This means interface is disabled., These interfaces act as backups that can enter a forwarding state if an active (currently forwarding) interface fails
+* interfaces in forwarding state behave normally, they send and receive traffic
+* interfaces in blocking state only send or receive STP messages, BPDUs, bridge protocol data units
+* Bridges are an old intermediary technology between hub and switch, that is why stp refers to switch as bridge. BRidge and switch are interchangeable in this case
+* if a link between two switches is in a blocked state, it basically doesnt exist
+* basically, STP will keep an interface disabled, until another one is detected to be down, in which case the interface will go back up to support new traffic
+
+### Deeper into stp
+* by selecting which ports are forwarding and which are blocking, stp creates a single path to/from each point in the network. This prevents layer 2 loops
+* There is a set process that STP uses to determine which ports should be forwarding and which should be blocking
+* STP enabled switches send/receive hello BPDUs out of all interfaces every 2 seconds by default. 
+* If it receives a response it knows the interface is connected to another switch
+* switches send outthe hello BPDUS to learn of other switches
+
+### BPDUs
+* switches use the one field in the STP BPDU, bridge ID to elect a root bridge. The switch with the lowest bridge id becomes root bridge
+* all ports on the root bridge are put in a forwarding state, and other switches on the topology must have a path to reach the root bridge
+* traditionally, this takes 2 fields, bridge priority and source mac address
+* default bridge priority is 16 bits, and set to 32768. iF all priority fields are equal, whoever has lowest mac address will become root bridge
+* in modern stp however, the bridge priority field is extended to comprise of the bridge priority, and extended system id (VLAN ID) in order to support vlan operations
+* why does it have a vlan ID? because cisco uses PVST, per vlan spanning tree. Each vlan has its own stp instance, so each vlan has different interfaces which can be forwarding or blocking
+* the default rbidge priority is the sum of the vlan ID and the bridge priority. Thus if a switch is in vlan 1, its actual bridge value is 32769. 
+* because the last 4 bits comprise the bridge priority, and the extended system id is everything up to 2048, you must increase the total bridge priority by a value of 4096 every increment if you want to change the priority without changing vlan
+* valid bridge priority can be between 0 and 61440, at intervals of 4096
+* the LOWEST bridge id is the root bridge
+
+### Root switch
+* the root switch with the highest bridge priority will have all ports forwarding
+* all root ports are designated ports
+* when a switch is powered on, it assumes it is root bridge.
+* It will only give up that position if it receives a superior BPDU, lower bridge ID
+* once the topology has converged and all switches agree on the root bridge, only the root bridge send bpdus
+* other switches in the network will forward bpdus, but not generate their own
+
+### Steps
+1. the switch with lowest id becomes root. All ports on that switch are forwarding, designated
+2. each remaining switch will select one of its interfaces to be its root port, the interface with the lowest root cost will be root port. Root ports in forwarding states.
+    * each speed has an stp cost. 10 MBPS has cost 100, 100 mbps 19, 1 gpbs 4, 10 gbps, 2
+    * the cost on all root ports of the root bridge is 0
+    * say switch 1 isthe root bridge, and all ports are 1 gbps. switch 2 will say, "I was advertised a cost of 0 on my g0/1 (connected to root bridge), my interface costs 4, total is 4". I was advertized cost of 4 on g0/0, my interface cost = 4. total cost = 8. the root port of that switch will be whichever one has the lowest cost, the one connected to the root bridge.
+    * if a switch has multiple ports with the same root cost, the interface connected to neighbor with lowest bridge id wil be the root port
+    * what if two switches have two connections between them? the interface connected to the lowest port id is the root port. TO identify this do "show spanning-tree". STP port id = port priority (def 128) + port number. the NEIGHBOR switch's port id is used to identify root port in this case
+3. block ports to prevent layer 2 loops
+   * every collision domain has a single STP designated port. Thus on blocked connections, we need to specify the designated port. 
+   * to find the designated port:
+     * the switch with lowest root cost will make its port designated
+     * if the root cost is the same the switch with the lowest bridge id will make its port designated  
+     * the other switch will make its port non designated, or blocking
+
+* when you have an STP path that involves intermediate connections through other switches to get to the root bridge, you add up the sum of root connections to get total cost
+
+### STP commands 
+* show spanning-tree, show vlan information and vlans
+* show spanning-tree vlan (vlan number). Root id shows data about the root, bridge id shows information about the selected bridge
+* show spanning-tree detail, more details
+
+### STP Port states
+* blocking: stable. nn designated ports in this state
+  * disabled to prevent loops
+  * do not send or receive traffic on blocking state interface
+  * interfaces in blocking state receive and process STP BPDUs, if they need to change to forwarding
+  * do not forward these BPDUs
+  * do not learn mac addresses
+
+* Listening: transitional
+  * After the blocking state, interfaces with the designated or root role enter listening state
+  * only designated or root ports enter listening state
+  * lasts 15 seconds by default, determined by forward delay timer
+  * only forwards and receives STP BPDUs
+  * does not do the same for regular traffic
+  * does not learn mac addresses
+* Learning: transitional
+  * 15 seconds, after listening state, determined by FDT (forward delay timer)
+  * same as listening, but this one learns mac addresses. Prepare for regular traffic by gathering some mac addresses
+* forwarding: stable
+  * pot operates as normal sends and receive BPDUs 
+  * normal traffic
+  * learns addresses
+
+* listening and larning are transitional states which are passed through when an interface is activated or when a blocking port must transition toa  forwarding state due to change in network topology
+
+### Timers
+* Hello timer, 2 seconds. How often root bridge sends the hello bpdu
+* forward delay, 15 seconds, how long the switch will stay in listening and learning states (each state is 15 seconds, total 30)
+* max age: how long an interface will wait to changew the stp topology after ceasing to receive hello bpdus. The timer is reset every time a bpdu is received. THis is basically network failure detection. If the failure doesnt recover, stp re-evaluation, and designated/non designated ports are changed. If blockign port selected to go to forwarding, it will go from blocking to listening, then learning, and finally forwarding. Thus it can take up to 50 seconds for a blocking interface to transition to forwarding
+* these times are in place to 
+
+### STP BPDU
+* uses destination mac address of 01:00:0c:cc:cc:cd for PVST+ (cisco)
+* what is pvst plus? PVST only supports ISL trunk encapsulation
+* PVST+ supports 802.1q encapsulation
+* regular stp uses 01:80:c2:00:00:00
+  
+* STP BPDU
+  * protocol identifier: 0x0000
+  * version id: spanning tree (0)
+  * bpdu type: configuration (0x00) (there are other types, but not important now)
+
+* flags
+  * signal topoligy changes
+  
+* Root bridge identifier
+  * root bridge priority
+  * root bridge system id extension 10
+  * root bridge system id aa:aa:aa:aa:aa:aa
+  * root path cost
+
+* bridge identifier (currently selected switch)
+  * bridge priority
+  * systemid
+  * system mac
+
+* port ID: 0x8002 default
+* message age
+* max age
+* hello time
+* forward delay
+
+### Improvements
+* portfast
+  * enabled on interfaces connected to end host, designated ports in forwarding state
+  * when first connected, they need to do the listening and learning states
+  * no risk of loops with end hosts, so why go through the entire process?
+  * allows to bypass listening and learning. Must be enabled only on ports connected to end hosts. If enabled on port connection it will cause layer 2 loop
+  * to enable portfast, enter the interface on the switch, and do spanning-tree portfast. This will only work if the port is not in trunking mode
+  * portfast can cause loops if network cabling is changed
+  * risk to using portfast, but there is an additional method we can use to prevent this
+
+* BPDU Guard
+  * if an interface with guard enabled receives a bpdu from a switch, the interface will shut down to prevent a loop from forming
+  * to enable, enter interface, then do, spanning-tree bpduguard enable
+  * to enable bpduguard by default on portfast, from config mode, do, spanning-tree portfast bpduguard default
+  * to enable a port disabled by bpduguard, just do shutdown, then no shutdown to reset the interface.
+  * even if it receives a superior bpdu, the port is disabled
+
+* loop guard
+  * even if the inhterface stopes receiving bpdus, it will not start forwarding, THe interface will be disabled
+
+### Spanning tree mode
+* to change spanning tree mode, do spanning-tree mode (mst/pvst/rapid-pvst)
+
+### Configure root priority
+* to make an arbitrary bridge the root bridge
+  * spanning-tree vlan (num) root primary/secondary
+  * this makes the selected switch have lowest priority 
+* we can also have a backup root bridge
+* priority configurations only apply in the vlan on which they are configured. This allows spanning tree load balancing
+  * if you have several vlans, you can have a different root bridge for different vlans. Thus, different vlans will have different disables interfaces, and will leverage resources more efficiently 
+
+### interface configuration
+* to configure cost of an interface, enter the interface conig mode
+* spanning-tree vlan (num) cost (cost) to change cost manually
+* spanning-tree vlan (num) port-priority (priority num) to change port priority
+
+## Rapid Spanning Tree Protocol
+Old spanning tree can take up to 50 seconds to chagne topology. Responds in a few seconds. Default on most devices. CCNA only has RSTP
+
+### Standard vs Cisco
+* Standard IEEE
+  * original STP
+  * all VLANs share one STP instance
+  * cannot load balance using classic STP
+  * 802.1w, rapid spanning tree protocol
+    * much faster than original standard, all vlans still share one stp instance
+    * cannot load balance
+  * Multiple spanning tree protocol
+    * modified rstp mechanics
+    * group multiple vlans into one instance to perform load balancing. Superior to cisco. Very easy to configure and manage
+    * not paralleled by cisco yet
+    * best for very large networks with lots of vlans, overkill for smaller networks however
+* Cisco STP, PVST+, per vlan spanning tree plus
+  * cisco upgrade tot eh IEEE version
+  * each vlan has an STP instance
+  * can load balance by blocking ports for each vlan
+  * rapid pvst+
+    * upgrade to 802.1w
+    * each vlan has own stp instance
+    * load balancing and high speeds
+
+### RSTP
+* not timer based
+* improvement over 30 seconds older methods take to move a port to forwarding 
+* RSTP serves same purpose as STP, elects root bridge with same rules, elects root ports with same rules, and elects designated ports with same rules as STP
+* RSTP costs are expanded versions of STP
+
+speed     RSTP COST
+10 mbps   2000000
+100 Mbps  200000
+1 Gbps    20000
+10 Gbps   2000
+100 Gbps  200
+1 Tbps    20
+
+* RSTP has only a few states as well
+
+1. Discarding: Administratively disabled, or enabled but blocking traffic
+2. learning 
+3. designated
+
+root port role remains unchanged in RSTP 
+
+non designated was split into alternate and backup port role in RSTP
+
+### Alternate and Backup ports
+* alternate
+  *  discarding that receives a superior bpdu from another switch
+  *  functions as backup to root port
+  *  if root port fails, the switch can imediately move its best alternate port to forwarding
+  *  this happens very quickly, using UplinkFast. This is automatically enabled
+  *  backbonefast is another optional feature. 
+     *  if a switch is disconnected from root, and has lowest ID, then it becomes the root and starts sending bpdus. This means some switches might be receiving bpdus from two or more switches. BackboneFast ensures that other switches quickly forward higher priority hellos from the old root bridge to fix the issue
+  * These are all enabled by default 
+* backup
+  * discarding port that receives superior BPDU from anotehr interface on the same switch. Only happens when two interfaces are connected to thed same collision domain through a hub. Hubs are never used, so it isnt very useful
+
+### Configuration commands
+* spanning-tree mode rapid-pvst 
+
+### BPDU
+* protocol version 2 (rstp version)
+* bpdu type 2
+* uses all 8 bits of the BPDU flags
+* in RSTP all switches send out BPDUs. They all send hellos every 2 seconds
+* the bpdu info ages much quicker. In RSTP a switch considers a neighbor lost if it misses 3 bpdus, 6 seconds. Then it will flush, or remove all mac addresses learned on that interface
+
+### Link Types
+* RSTP distinguishes between three different link tyoes
+* EDGE: a port connected to an edge host. Moves directly to forwarding without negotiation
+  * works like a portfast stp port
+* P2PL direct connection between two switches
+* SharedL a connection to a hub
+
+## Ether Channel
+* allows to group multiple physical interfaces into a group which operates as one interface
+* thsi relies on LACP, link aggregation control protocol
+* a layer 3 etherhcannel is agroup of routed ports that operate as one, a layer 2 etherchannel is a group of switch ports
+
+### Layer Switches
+* access layer switch
+  * end hosts connect here
+* distribution layer switch
+  * other switches connect here
+
+* so what if we want to speed up a connection between an access switch and a distribution switch by adding more interfaces? that doesnt help, because STP
+  * STP will select a single port interface to connect the two switches. All except one are disabled by spanning tree
+  * the rest are considered as backups
+  * if all of the links were enabled, it would cause a broadcast storm. This is what etherchannel can solve
+  * we will have redundancy and bandwidth increase
+  * we represent this by drawing a circle around grouped connections
+  * these will now act as a single interface, and STP will treat them as such
+  * no broadcast storm because it is a single interface
+  * 4 physical interface acting as one
+  * this does not mean copies of data are sent on each channel. Traffic is load balanced
+  * algorithm determines which traffic uses whcih interface
+* when bandwidth of the interfaces on the access switch to clients > bandwidth on distribution switch to access switch, this is oversubscription
+
+### Load balancing
+* etherchannel balances usig flows
+* a flow is a communication between two nodes in the network
+* in this calculation, source/destination mac, or both addresses
+
+### configuration
+* show etherchannel load-balance
+  * this will show which method it uses to determine which physical interface is used to transmit data. 
+  * src-dst-ip means it determines this using source and destination ip addresses
+  * traffic that flows from one source to one destination will always flow on the same interface
+  * what if there is no ip packet or ip address? use mac address
+* port-channel load-balance src-dst-mac
+  * change the method to source and destnation mac address. more stable
+* 3 methods of etherchannel configuration
+  * PAgP (port aggregation protocol)
+    * cisco proprietary, only cisco
+    * dynamically negotiates creation and maintenance of ether channel, like dtp does for trunks
+  * LACP (link aggregation control protocol)
+    * Industry standard IEEE 802.3ad
+    * dynamically negotiates creation and maintenance of etherchannel
+    * this is on exam, but all methods should be known
+  * static etherchannel
+    * static configuration of etherchannel
+    * usually avoided, because you want to dynamically manipulate the etherchannel. If one interface fails, then the etherchannel will stop working when statically specified
+
+* with etherchannel, only 8 interfaces max can be used
+* to configure etherchannel:
+* interface range g0/0,g0/3
+  * channel-group (group num) mode (mode)
+  * mode can be desirable or auto
+    * auto + auto = nothing
+    * desireable + anything = etherchannel 
+* after you complete the port grouping, you can work on it like you would any single interface
+  * interface port-channel (group number) [usually something like po(num)]
+  * now you can run any port commands on it, like switchport mode trunk
+* interfaces in group need same configrations, like speecd and duplex
+
+* show etherchannel summary
+
+### What about routed ports?
+* broadcast storms are no concern on routed switches
+* to enable etherchannel on routed switch, enter interface range config
+  * no switchport
+  * channel-group (num) active 
+
+## Dynamic Routing
+* in contrast to static routing. Static routing is manual configuration of routes with the ip route. 
+* This involves configuring a dynamic routing protocol. Dynamic, because it isnt fixed
+
+### Types of routes
+* network route
+  * to a network/subnet (mask length </32>)
+  * host route: to a destination with mask length of /32
+
+### Dynamic Routing
+* when dynamic routing is enabled, the router connected to the lan address being advertised send out an advertisement, saying
+* " this ip can be reached via me "
+* the router advertised to will then tell its neighbors the same thing, and the route is added to the route table. 
+* This continues, and the route is told to every following router
+
+* in dynamic oruting, invalid routes are auto-removed
+  * when a route is lost, it can automatically change its route to compensate
+  * the dynamic routing protocol will always automatically use the fastest connection.
+  * Same as STP cost
+
+* routers can use DRP to advertise information about the routes they know to other routers
+* they form adjacencies, neighborships with adjacent routers to exchange information
+* if multiple routes to a destination are learned, the router determines which is superior and adds it to the routing table. It uses metric to determine which this is
+
+### Types of DRPs
+* IGP
+  * interior gateway protocol
+    * share routes within a single autonomous system whgich is a single organization
+    * algorithm type
+      * distance vector
+        * routing information protocol RIP
+        * Enhanced Interior Gateway ROuting Protocol EIGRP
+      * link state
+        * OSPF Open shortest path first (main focus of CCNA)
+        * ISIS Intermediate system to intermediate system
+* EGP
+  * exterior gateway protocol
+    * used to share routes between different autonomous systems
+    * algorithm type
+      * path vector
+        * Border gateway protocol is the only protocol used, running on path vectors
+
+* algorithm: process to choose the routes. All want to share route information
+
+### Distance Vector Protocols
+* invented before link state 
+* ripv1 and IGRP/EIGRP are examples
+* operate by sending known destination networks and metric to reach known destination networks.
+* THis is routing by rumor. The router doesnt know the network beyond neighbors, because it only knows what neighbors tell it
+* called distance vector because the router only knows the vector, direction, and distance, number of hops to destination
+
+### link state routing protocol
+* every router makes  aconnectivity map of the network
+* to allow this, each router advertises information about its interfaces to its neighbors. These advertisements are passed along to other routers until all routers in the network develop the same network map
+* every router independently uses the map to calculate the best routes to each destination
+* use more CPU because more information is shared
+* link state protocols tend to be faster in reacting to changes in the network than distance vector protocols
+
+### Metric
+* if a router learns 2 routes to same destination, it uses metric value to determine which to use. Low metric is the best. same as root cost. 
+* if a router learns two or more routes via the same routing protocol to the same de3stination with the same metric, both will be added to the routing table and traffic will be load balanced
+  *  ECMP load balancing, based on the metric, equal cost multipath.  
+
+IGP      |    METRIC       |     Explanation                                                                                                      |
+_________|_________________|______________________________________________________________________________________________________________________|
+RIP          Hop Count          Each router in the path is one hop, total hops to destination, regardless of speed. Doesnt work so well
+EIGRP        Bandwidth          Complex formula taking into account many things. Bandwidth of slowest link in route
+OSPF         Cost               The cost of each link is calculated based on bandwidth. Total metric is total cost of each link in route
+ISIS         Cost               Total metric is total cost of each route link. The cost of each link is not automatically calculated by default
+
+* sometimes 2 routing protocols are used
+* remember, different routing protocols use different metrics so they cannot be compared. For example, ospf route might have metric of 30, and an EIGRP route to the same place might have a metric of 33280. Which is better? we dont know.
+* Thus, we need administrative distance to determine which route will be used
+* lower AD is preferred, and indiicated the routing protocol is considered more trustworthy. 
+
+protocol                Administrative Distance
+Directly Connected      0
+Static                  1
+External BGP            20
+EIGRP                   90
+IGRP                    100
+OSPF                    110
+ISIS                    115
+RIP                     120
+EIGRP                   170
+Internal BGP            200
+Unusable Route          255
+
+* lower ad number is preferred, and will be used
+* you can also set a static route to have a higher ad number, by adding a number to the end of the ip-route command
+* this is a floating static route, it is inactive and not in the routing table unless dynamically routed route is removed
+* do show ip route
+  * administrative distance/metric cost
+  
+## RIP and EIGRP
+* RIP: Routing Information Protocol
+* EIGRP: Enhanced Interior Gateway ROuting Protocol 
+
+### RIP
+* industry standard
+* distance vector interior gateway
+* routing by rumor logic to learn and share routes
+* uses only hop count as metric, without taking into consideration bandwidth
+* maximum hop count is 15, anything beyond that is considered unreachable, and any route beyond 15 will not be used in the routing table
+* RIP is almost never used in large networks, but can be used in some small ones
+* 3 versions
+  * ripv1 and ripv2 used for ipv4
+  * ripng (rip next generation) used for ipv6
+* 2 message types
+  * request: to ask RIP enabled neighbor routers to send their routing table
+  * Response: to send the local router's routing table to neighboring routers
+  * rip enabled routers will share routing table every 30 seconds.
+* with so many updates, router heavy networks will get clogged
+
+#### V1 vs V2
+* RipV1
+  * only supports classful addresses, doesnt support VLSM and CIDR
+  * this makes it useless for modern networking, as it cannot use subnets
+  * messages broadcasted to 255.255.255.255
+* RipV2
+  * supports vlsm and cidr
+  * includes subnet mask information in advertisements
+  * multicast to 224.0.0.9
+* what is multicast?
+  * broadcast delivered to all connections
+  * multicast only received by devices included in a multicast group
+
+### RIP configuration
+1. router rip, (rip config mode)
+2. version 2, (to set to version 2)
+3. no auto-summary 
+   * auto summary automatically converts networks to classful networks, and advertises those networks as such
+   * This is bad, disable it with this command
+4. network (network ip)
+   * look for interfaces with an IP address that is in the specified range
+   * active RIP on the interfaces that fall in the range 
+   * form adjacencies with connected RIP neighbors
+   * advertise the network prefix of the interface
+   * OSPF and EIGRP operate the same
+   * if we do network 10.0.0.0, it is assumed to be /8. 172.16.0.0 is assumed to be /16, etc
+     * router will look for any interfaces with an IP address that matches 10.0.0.0/8
+     * because /8 only needs to match first octet
+     * any interface with a matching IP will be added as an adjacency
+     * then it will send and receive route information on these interfaces
+     * it will advertise the source interface IP address instead of the network ip given
+   * if it is an interface with no rip neighbors, no new adjacencies are formed
+     * afterwards that router still advertises the interface address to all RIP neighbors 
+   * EVEN THOUGH THERE ARE NO NEIGHBORS, advertisements will still be sent out of this interface.
+     * Thus, configure it as a passive interface
+     * from rip config, do:
+       * passive-interface (interface)
+       * stop sending advertisements out of the specified interface, however, it will continue to advertise the interface to neighbors
+       * EIGRP and OSPF both have this function as well
+   * what if we want to give all of our known neighbors a route to something like the internet?
+     * we have a static route to 0.0.0.0 0.0.0.0 on interface 203.0.113.0/30
+     * to share this, do:
+       * default-information originate
+     * rip treats all routes as equal, given same num hops. Thus it load balances on all routes with equal hops
+  5. do show ip protocols
+      * shows IP protocol information 
+      * shows protocols, version information, and protocol specific characteristics
+      * maximum paths refers to the max number of paths used for load balancing
+      * to change maximum paths, do:
+        * maximum-paths (num paths)
+        * in rip configuratiuon mode
+      * in rip you can also see rip neighbors, and the administrative distance
+      * you can change distance with:
+        * distance (distance number)
+        * in rip config mode
+
+### EIGRP
+* Enchanced interior gateway routing protocol
+* Proprietary to cisco originally, but now published so other vendors can implement it on their equipment. Not used much outside cisco.
+* Advanced hybrid DVRP
+* much quicker than rip
+* no hop count limit, better for large network
+* send messages with multicast address 224.0.0.10
+* can perform unequal cost load balancing. By default it does ECMP over 4 paths, but can be configured to do so over unequal cost routes
+  * it can be configured to send more traffic over high volume interfaces, and less over lower volume interfaces, with lower speeds
+* still not as widespread as OSPF
+
+### EIGRP configuration
+* router eigrp (autonomous system number), enter router config mode
+  * autonomous system number basically is a grouping number. All routers with the same autonomous system number for EIGRP will be able to form an adjacency and share route information 
+  * thus routers that want to communicate must have the same number
+* no auto-summary
+  * same as RIP, always do this to prevent advertisement of classful advertisement
+* passive-interface (interface)
+  * do this on any interface that has no EIGRP routers connected
+* network (ip)
+  * activate EIGRP on any interface that matches the IP range
+  * command assumes classful, and looks for any IPs that match its network octets 
+* we can also do something like 
+  * netowrk 172.16.1.0 0.0.0.15
+  * when 172.16.1.0/28 is connected to interface g0/2
+  * this will make g0/2 an EIGRP interface
+  * what is 0.0.0.15??? why is it used as the subnet mask?
+  * EIGRP uses a wildcard mask instead of a subnet mask
+
+### Wildcard mask
+* inverted subnet mask
+* all 1s in the subnet mask are 0 in equivalent wildcard mask
+* 255.255.255.0 subnet has a 0.0.0.255 wildcard
+* what if we have 255.255.255.240
+* inverting the bits gives us 0.0.0.15, a /28 prefix using a wildcard
+* we can conclude then, that 0.0.0.15 represents a /28 subnet mask
+* easy shortcut: subtract each octet in subnet mask from 255, and you will get the wildcard mask
+* a 0 in the wildcard mask means that the bits must match
+* a 1 means that the bits dont have to match
+  
+* so lets say we have the 0.0.0.15 wildcard mask
+* 00000000.00000000.00000000.00001111
+  * the first 28 bits are 0, so the first 28 bits must match 
+  * thus, if the first 28 bits of any address on any interface of the router matches the ip given by the network command, EIGRP is enabled on that interface
+  * usually best to use same prefix length as the ip address specified
+* /32 wildcard mask? subnet is 255.255.255.255, thus wildcard is 0.0.0.0
+* OSPF uses wildcard as well
+
+### EIGRP continued
+* do show ip protocols
+* eigrp uses delay and bandwidth by default
+* shows router ID as well to identify it within the AS, autonomous system
+* Router ID is determined by:
+  * manual configuration 
+  * highest IP address on a loopback interface (virtual internal interface)
+  * highest IP address on a physical interface
+  * to change, do :
+    * eigrp router-id (ip address to set as ID)
+  * in the routing table:
+    * do show ip route
+    * EIGRP routes are indicated by D
+    * RIP is indicated by R
+    * metrics get very high, harder to understand
+
+ 
+## first hop redundancy protocol FHRP
+* when we have multiple connections to the internet with several routers, you can have a backup when failures occur
+* what if a router is configured as a default gateway? anything destined for outside the lan will go there. If that router fails, how do clients know what the new default gateway is??
+* an FHRP is desgiend to protect the network by allowing two or more routers to provide backup for that router. If an active router fails, the backup takes over.
+### Function
+* First hop, becase default gateway is first hop in whatever route the client is sending to.
+* Both routers share a VIP, virtual IP address. You can configure the clients to use that virtual IP
+* routers must negotiate their roles, so they send multicast hellos to each other
+* one router is active, others are standby
+  * active: working always
+  * standby: failsafe, works if main fails
+* if the client sends an ARP request to the VIP address? mac address of gateway necessary to send data to the internet
+* the ARP request is broadcast, so it sends to all connected devices.
+* Both routers in the VIP will receive the request. The active router will send the reply to the requesting client
+  * each FHRP also uses a virtual mac address!
+
+### Failsafe
+* when standby router doesnt receive any hello, it goes to active
+* since both routers shared a mac address and ip, with the VMAC and VIP, all that needs to be changes are the switch mac address tables. The clients already know where to send things
+* when this happens, the standby, now active router sends gratuitous arp replies.
+  * these are ARP replies sent without being requested. All switches will receive the ARP frames and update their mac address tables to forward to the now active router
+* what if R1 Comes back online? it will become the standby router. The backup router wont auto give up its role. You can configure the original active router to take back the active state. This is called preemption
+
+### HSRP
+* Hot standby router protocol
+  * cisco proprietary
+  * active and standby router are elected
+  * version 1
+    * ipv4 only
+  * version 2
+    * ipv6 and groups
+    * subnet support
+  * multicast Ipv4 address:
+    * v1: 224.0.0.2
+    * v2: 224.0.0.102
+  * Virtual mac address:
+    * v1 = 0000.0c07.acXX (xx = hsrp group number)
+    * v2 = 0000.0c8f.fXXX (xxx = hsrp group number)
+  * load balancing
+    * when you have multiple subnets and or vlans, you can configure a different active router for each subnet in order to load balance over several routers
+    * different root bridge in each vlan
+    * you can configure a different active router in each subnet as well
+    * for example, 2 routers, one is used for the active and one as the standby for vlan1, and vice versa for vlan2
+### VRRP
+* virtual router redundancy protocol
+  * open standard. 
+  * Cisco can run it, nearly identical
+  * instead of active and standby, it uses master and backup routers
+  * functionally exactly the same 
+  * multicast ipv4 address is 224.0.0.18
+  * virtual mac address is different: 0000.5e00.01XX (XX = VRRP group number)
+    * group number is in hexidecimal this time. C8 corresponds to 200 for instance
+  * you can configure a different master for each subnet or vlan to load balance
+  * all that is different is the naming scheme
+  * remember: subnet is layer 3, vlan is layer 2
+
+### GLBP
+* gateway load balancing protocol
+  * cisco proprietary
+  * load balances among several routers in a single subnet
+  * AVG, active virutal gateway is elected
+  * up to four AVFs (active virtual forwarders) are assigned by the avg itself can be an avf too
+  * each avf acts as a default gateway for some hosts
+  * multicast ipv4 address is 224.0.0.102
+  * virtual mac address: 0007.b400.XXYY (XX = GLBP group number, YY=AVF number)
+
+### configuration
+* HSRP
+* HSRP is configured on the interface directly
+  * interface (interface number)
+  * configured with standby command
+  * standby (group number)
+    * good practice to match number with vlan number
+    * the group numbers must match between routers
+  * configure virtual ip
+    * standby (group number) ip (Vip address)
+  * configure if active router
+    * standby (group number) priority (priority number)
+    * highest priortiy will take the active
+    * if any equal priorities, highest ip address value will become active
+    * default is 200
+  * preemption
+    * standby (group number) preempt
+    * enables preemption on selected router so that it retakes active after it is restarted on error. Only if it has highest priority
+  * to change version:
+    * standby version (1/2)
+    * version 1 and 2 are not compatible
+
+* both routers need same VIP
+* show standby
+  * show standby shows standby information
