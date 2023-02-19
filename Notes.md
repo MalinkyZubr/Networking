@@ -1494,6 +1494,7 @@ Unusable Route          255
   * these are ARP replies sent without being requested. All switches will receive the ARP frames and update their mac address tables to forward to the now active router
 * what if R1 Comes back online? it will become the standby router. The backup router wont auto give up its role. You can configure the original active router to take back the active state. This is called preemption
 
+NOTE THAT ALL GROUP NUMBERS ARE IN HEXIDECIMAL
 ### HSRP
 * Hot standby router protocol
   * cisco proprietary
@@ -1562,3 +1563,135 @@ Unusable Route          255
 * both routers need same VIP
 * show standby
   * show standby shows standby information
+
+## TCP and UDP
+## Layer 4 
+* the transport layer
+* encapsulates packet with transport header
+* provides (or not provide) various services to applications
+  * reliable data transfer
+  * error recovery
+  * data sequencing
+  * flow control (dont send data faster than can be received)
+  * provide layer 4 addressing (port numbers). completely different than layer 2 ports
+    * identify application layer protocol
+    * session multiplexing
+    * session? exchange of data between two or more communicating devices
+      * must handle multiple communications at once
+      * communicate with server 1 and server 2 at the same time
+### TCP packet:
+* destination port: what application layer protocol is being used? eg port 80 = http
+* source port: randomly selected by pc1, helps identify the session
+* when a server for instance receives a request from port 50 destined for port 80, when it replies those values are reversed. Source is 80 and destination is 50.
+* you can do this for as many sessions as your computer has capacity for. You can have multiple sessions with one client as well
+
+### port numbers
+* IANA assigns what ports are used by applications
+  * well known ports: 0-1023, strictly regulated, important
+  * regeistered: 1024 - 49151, less regulated, must be registered to be used
+  * ephemeral/private/dynamic port: 49152 - 65535, private operations, not registered. these are the randomly selected source ports
+
+### TCP
+* briefly
+  * connection oriented protocol
+  * before sending data the two hosts communicate to establish connection. Data excahnge begins after start of connection
+  * reliable communication
+    * destination must acknowledge it received each TCP segment.
+    * segment is name of layer 4 PDU
+    * if segment isnt acknowledge, it is sent again
+  * provides sequencing
+    * allows destination hosts to put segments into correct order, even if they arrive out of order
+  * tcp provides flow control
+    * the destination host can tell the source host to make data transfer go faster or slower
+
+### TCP header
+* l4 header
+  * source port: 16 bits, 65536 port numbers for source port
+  * sequence number/acknowledgement number: sequencing and acknowledgement
+  * flag bits: 
+    * ack: acknowlege connection
+    * syn: synchronize connection
+    * fin: finish
+  * window size: flow control
+
+### 3 way tcp handshake. Create connection
+* 3 messages must be sent to establish connection
+  1. establish connection with the SYN flag set to one, sending tcp segment
+  2. reply from target with syn and ack flag set to 1
+  3. first client sends an ack segment, and all connection is ready
+
+### 4 way tcp handshake. Terminate connection
+1. send segment with fin flag set to 1
+2. receive response with ack flag set to 1
+3. receive response with fin flag set to 1
+4. send segment with ack flag set to 1
+
+### TCP Sequencing and acknowledgement
+exchange between 2 pc
+1. pc1 do 3 way handshake, assign random sequencing number (10)
+2. pc2 do 3 way handshake, also assigns a random sequencing number (50). Also acknowledges the sequence number by replying with ACK of 11, 10+1. Responds with ack of the sequence it expects next
+3. pc1 finishes the 3 way handshake, with sequence 11, and acknowledgement of 51, because it received a sequence number of 50
+
+this continues on along
+* hosts set random initial sequence number
+* forward acknowledgement is used to indicate what sequence it expects to receive next
+
+#### retransmission
+* pc1 sends sequence number 20
+* there is an acknowledgement from pc2 of 21
+* pc1 sends segment with no acknowledgement
+* resends the request to ensure it is received
+### TCP control flow
+* acknowledging every single size is inefficient if size is not considered
+* TCP header window size allows data to be send before acknowledgement is required
+  * what does this mean? pc1 can send 3 segments at a time before requiring acknowledgement
+* sldiing window can be used to dynamically adjust how big the window is.
+
+### UDP
+* much simpler
+  * not connection oriented
+  * the sending host doesnt need connection to send data
+  * no reliable communication assurance
+  * acknowledgements are not sent 
+  * if data is lost, no way to retransmit it
+  * segments are sent best effort
+  * UDP doesnt sequence
+  * udp doesnt control flow
+
+##### If TCP is a rifle, UDP is a shotgun
+
+* 4 fields in the segment
+  * source and destination ports
+  * length
+  * checksum so receiving host can check for errors
+
+### comparing tcp and udp
+* tcp is more stable and has more features
+  * more overhead
+* for reliable communication you want TCP
+* for applications like real time voice and video, UDP is preferred
+  * dont want tcp slowing stuff down
+
+both provide layer 4 addressing with ports and layer 4 multiplexing
+
+### port numbers
+* TCP ports:
+  * FTP data 20
+  * FTP control 21
+  * SSH 22
+  * Telnet 23
+  * SMTP 25
+  * HTTP 80
+  * POP3 110
+  * HTTPS 443
+* UDP
+  * DHCP server 67
+  * DHCP client 68
+  * TFTP 69
+  * SNMP agent 161
+  * SNMP manager 162
+  * Syslog 514
+* both
+  * DNS 53
+
+
