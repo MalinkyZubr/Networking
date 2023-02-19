@@ -1694,4 +1694,63 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
 * both
   * DNS 53
 
+## IPV6
+* improved ipv4
+* written in hexidecimal
+* 6 in version field of ip header
+  
+### why ipv6?
+* not enough ipv4 addresses in existence!
+* there are only 4294967296 addresses. Not enough!
+* when ipv4 was made, the designers didnt expect internet to get so big
+* VLSM has allowed ipv4 addresses to be preserved on ipv4, along with nat
+* ipv4 addresses are assigned by IANA
+  * IANA distributes htem to RIR (regional internet registries) which can assigned them to companies that need them
+  * the North american ARIN RIR delcared exhaustion of ipv4 in 2015
+* An ipv6 address is 128 bits, quadruple of ipv4
+* that means it has 340 undecillion addresses. That should be plenty
+* an ipv6 address looks like:
+  * xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx/64
+  * 4 times as much information in an ipv6 address than ipv4
+  * uses the slash subnet mask convention, no dotted decimal subnet masks
 
+### shortening IPV6 address
+* they are pretty long, so they are hard to remember
+* but we can make them simpler in a few ways
+* remove the leading 0's
+  * remove any segments of the address that start with 0
+* replace quartets of 0s can be replaced by ::
+* 2001:0DB8:0000:0000:0000:0000:0080:34BD thus becomes
+  * 2001:0DB8::0080:34BD
+  * how do we know thsi works? there are 8 quartetes in the ipv6 address. Thus we see only 4 quartets, we know 4 are 0's
+  * the limitation is that only one set of consecutive 0's can be removed
+  * if we had an address with this issue, we could do this:
+    * 2001::20A1:0:0:34BD
+    * make each other sequence of 0s outside the main sequence a single 0
+* when both methods are applies:
+  * 2001:DB8::80:34BD
+
+### IPV6 Prefix
+* works the same as with ipv4
+* change all host bits to 0, whats left over is the global unicast address, or prefix
+* typically an enterprise requesting an address gets a /48 block
+* typically, ipv6 subnets utilize /64
+* thus the company has 16 bits to do subnetting
+* remaining 64 bits used for hosts
+* 2001:0DB8:0000:0000:0000:0000:0080:34BD/64
+  * first half of the address is the network portion
+  * the last quartet in the network portion is used for subnetting
+  * in this case, the first 3 quartets are the global routing prefix, the 4th quartet is the subnet identifier
+  * last 64 bits is the host portion of subnet
+  * remember, each character in hexidecimal if 4 bits
+  * /64 refers to how many bits are in the network portion
+  * if you have a mask that isnt a multiple of 4, you must break down individual hex characters into binary, and set all bits not included in the mask to 0. The value converted back to hex is the value in the network address
+
+### configuration
+1. ipv6 unicast routing (enable routing for ipv6)
+2. interface (interface)
+3. ipv6 address (ipv6 address)
+4. no shutdown
+
+* note that every interface has 2 ipv6 addresses. On eof these is auto generated link local address. learn about them later
+  * ipv4 has these, but not automatic
