@@ -173,7 +173,7 @@ Network         Internet
 Data Link
 Physical        Link
 
-note: when people say "layer 2 problem," for instance, they mean with respect to the OSI model
+note: when people say `layer 2 problem,` for instance, they mean with respect to the OSI model
 
 
 ## intro to the CLI
@@ -183,34 +183,34 @@ How do you connect to a cisco device to manage it with the CLI?
    * then you need to open a putty session, which is a terminal emulator. From there you can go to serial to modify settings for the serial connection. By default they are the same as cisco devices
    * Baud rate should be 9600 bits/second. 8 data bits. 1 stop bit. Every 8 bits of data, 1 stop bit is sent to signify the stop of the bits. Parity set to none. Parity is for detecting errors. Flow control controls flow throuhg the device, set to none.
    * When entering the router you are by default in exec mode, singified by {hostname}>. all devices have hostnames. Exec mode is useless basically. Cant make any changes to the device
-   * If you enter the 'enable 'command, you go into priveleged exec mode. {hostname}# is priveleged exec mode. Provides complete access to view the devices configuration, restart the device, etc. However you cannot change hte config here, but can change the time and save the config file, etc. To view all commands, do ?. Ifg you want to display all commands that start with a letter, do e? for example
-   * to enter global configuration mode, enter "configure terminal"
-   * Protect privileged exec mode with a password. "enable password {password}"
-   * to see the detailed help for a command, do "enable password ?" for instance. Must have space between command and ? 
-   * To show the running configuration file, do show running-config
-   * To show the startup config, do show startup-config
+   * If you enter the `enable` command, you go into priveleged exec mode. {hostname}# is priveleged exec mode. Provides complete access to view the devices configuration, restart the device, etc. However you cannot change hte config here, but can change the time and save the config file, etc. To view all commands, do ?. Ifg you want to display all commands that start with a letter, do e? for example
+   * to enter global configuration mode, enter `configure terminal`
+   * Protect privileged exec mode with a password. `enable password {password}`
+   * to see the detailed help for a command, do `enable password ?` for instance. Must have space between command and ? 
+   * To show the running configuration file, `do show running-config`
+   * To show the startup config, `do show startup-config`
    * this will show nothing until we save the running configuration as a config file
-   * 3 ways to do this: write, write memory, and copy running-config startup-config. However, when we look at this it displays the password
-   * we nee dot do a "service password-encryption" command within configuration terminal mode. The number 7 before the encrypted password means it is using the proprietary encryption. 
+   * 3 ways to do this: `write`, `write memory`, and `copy running-config startup-config`. However, when we look at this it displays the password
+   * we need to do a `service password-encryption` command within configuration terminal mode. The number 7 before the encrypted password means it is using the proprietary encryption. 
    * However, there are cisco password crackers. So this is not secure. There are better passwords with tougher encryption
-   * Use the "enable secret {desired password}" this will enable the secrets of cisco
-   * in order to run out of level commands in the config mode, use the "do" command. "do show run" for instance
-   * how do you cancel a command you executed? do: "no {previous command you want to cancel}"
+   * Use the `enable secret {desired password}` this will enable the secrets of cisco
+   * in order to run out of level commands in the config mode, use the `do` command. `do show run` for instance
+   * how do you cancel a command you executed? do: `no {previous command you want to cancel}`
 
 Commands:
-1. enable: enter priveleged exec mode
-2. configure terminal: enter global configuration mode
-3. enable password {password}: create a password for priveleged exec mode
-4. service password-encryption: encrypts all passwords
-5. enable secret {password}: makes  a more secure password. If run with password, it is disabled
-6. do {priveleged exec level command}: run exec commands from global config mode
-7. no {command}: remove a command previously configured
-8. show running-config: displays active configuration file
-9. show startup-config: displays the saved configuration file which will be loaded if the device is restarted
-10. write: saves configuration
-11. write memory: saves configuration
-12. copy running-config startup-config: saves configuyration
-13. hostname {hostname}: chgange hostname
+1. `enable`: enter priveleged exec mode
+2. `configure terminal`: enter global configuration mode
+3. `enable password {password}`: create a password for priveleged exec mode
+4. `service password-encryption`: encrypts all passwords
+5. `enable secret {password}`: makes  a more secure password. If run with password, it is disabled
+6. `do {priveleged exec level command}`: run exec commands from global config mode
+7. `no {command}`: remove a command previously configured
+8. `show running-config`: displays active configuration file
+9. `show startup-config`: displays the saved configuration file which will be loaded if the device is restarted
+10. `write`: saves configuration
+11. `write memory`: saves configuration
+12. `copy running-config startup-config`: saves configuration
+13. `hostname {hostname}`: change hostname
 
 ## Ethernet LAN Switching
 This is the Data Link layer
@@ -331,7 +331,7 @@ preamble and SFD are usually not ocnsidered part of the ethernet header. Thus th
 * If a mac address isnt in the ip tables, the first ping will always fail, because ARP must find the destination mac address. In the time of the ARP request and reply, the ping fails. All subsequent pings succeed however.
   
 #### Cisco commands
-* in cisco CLI, arp -a is the same as "show arp". To see the mac-address-table of a cisco device, use "show mac-address-table"
+* in cisco CLI, the equivalent of windows `arp -a` `show arp`. To see the mac-address-table of a cisco device, use `show mac-address-table`
 * wireshark is a good way to inspect these procedures
 
 ### mac-address-table
@@ -340,12 +340,12 @@ preamble and SFD are usually not ocnsidered part of the ethernet header. Thus th
   * mac addresses
   * type (dynamic or static)
   * ports/interfaces
-* accessed via "show mac-address-table"
+* accessed via `show mac-address-table`
 
 * mac addresses age, after about 5 minutes they are automatically removed to save space
-* to clear mac-address-table of dynamic addresses, use "clear mac-address-table dynamic"
-* to clear specific address, do " clear mac-address-table dynamic address {mac address}"
-* to remove by interface, do "clear mac-address-table dynamic interface (interface)"
+* to clear mac-address-table of dynamic addresses, use `clear mac-address-table dynamic`
+* to clear specific address, do ` clear mac-address-table dynamic address {mac address}`
+* to remove by interface, do `clear mac-address-table dynamic interface (interface)`
 
 ## IPV4 Addressing
 * forwarding frames between LANs through routers.
@@ -422,7 +422,7 @@ add 1 to the network address and you get the first usable address. Subtract 1 fr
 ### configuring IP on cisco devices
 #### show all ip addresses
 * from priveleged exec mode:
-* "show ip interface brief" 
+* `show ip interface brief``
 * displays the ip address for each interface. If unassigned, you can assign it manually
 * method indicates how the host was assigned an ip address
 * status is the layer 1 status of the interface. Is there a cable connected?. Administratively down means it was disabled with the shutdown command. Cisco router interfaces are admin down by default
@@ -431,16 +431,16 @@ add 1 to the network address and you get the first usable address. Subtract 1 fr
 
 #### Set IPV4 Address
 * enter configure terminal mode
-* interface (ethernet type, like gigabitethernet) (interface #, like 0/0). This enters interface config mode for a specified interface
-* to change the address, enter ip address (desired ip address) (subnet mask)
-* then enter "no shutdown" to activate the interface 
+* `interface (ethernet type, like gigabitethernet) (interface #, like 0/0)`. This enters interface config mode for a specified interface
+* to change the address, enter `ip address (desired ip address) (subnet mask)`
+* then enter `no shutdown` to activate the interface 
 * when you set an ipv4 address of an interface through a router, it refers to the address of that LAN, not to the address of the router which is the first possible IP address of the network. Hosts adopt the IP address of the LAN they are connected to. You assign an IP to an interface connected to a switch so that other lans can connect and send data to that lan
 * if a computer wants to interface with a router through a switch, it will do so using the interface IP
 
 #### more show commands
-* "show interfaces (interface)" shows all interface information
-* "show interfaces description" shows interface descriptions which can be manually be configured. Good for organization
-* to configure an interface description, enter the interface config terminal. Then run: "description ## (description) ##"
+* `show interfaces (interface) `shows all interface information
+* `show interfaces description` shows interface descriptions which can be manually be configured. Good for organization
+* to configure an interface description, enter the interface config terminal. Then run: `description ## (description) ##`
 
 note you can manually set ip addresses for pc's in packet tracer it he config menu
 
@@ -453,7 +453,7 @@ note you can manually set ip addresses for pc's in packet tracer it he config me
 5. down down just means no connection. Routers are down by default, switches are not
 
 ### interface status
-1. "show interfaces status"
+1. `show interfaces status`
 2. contains port (interface)
 3. name of interface (description)
 4. status: shows whether interface is connected
@@ -465,7 +465,7 @@ note you can manually set ip addresses for pc's in packet tracer it he config me
 autonegotiation usually works, but good idea to know manual configuration
 
 ### configuring speed and duplex
-* enter interface configuration "interface (ethernet type) (interface number)
+* enter interface configuration `interface (ethernet type) (interface number)
 * speed (# speed based on network capability / auto for auto selection) to change speed
 * duplex (auto/full/half) to change duplex status
 * description ## (description) ##
@@ -559,7 +559,7 @@ To reiterate, local route is the actual IP address of the interface, and the con
 
 The ip address configured on a router interface will appear as a local route, /32. The IP address you assign the router is relative to the LAN, and thus is local. That is how clients will access the router?
 ### Managing routes with cisco systems
-1. "show ip route" shows the ip routing table. L stands for local network, and C stands for connected network.  
+1. `show ip route` shows the ip routing table. L stands for local network, and C stands for connected network.  
 2. if an address like 192.168.1.2 is a destination for a packet, and 192.168.1.0/24, the source router knows where to route because the network portions are the same
 3. connected route: network the interface is connected to 
 4. local route: the actual IP address on the interface
@@ -574,13 +574,13 @@ The ip address configured on a router interface will appear as a local route, /3
 
 ##### so how do we configure the static route?
 * local and connected routes are automatic. 
-* to configure a route, "ip route (destination-address) (mask) (next hop)". I give this packet to you, you deal with the route.
+* to configure a route, `ip route (destination-address) (mask) (next hop)`. I give this packet to you, you deal with the route.
 * ip route 0.0.0.0 0.0.0.0 (router interface IP address)
 * the next hop will figure out how to get the packet where it needs to go
 * ROUTERS WILL DROP PACKETS WITH UNKNOWN DESTINATIONS. THEY WILL NEVER FLOOD
 * unless we configure our routes (or do dynamic routing, later), we cannot send packets to unknown destinations, eg dstinations not in the routing table
-* How do we get around this? This command: "ip route (destination IP) (mask) (exit-interface). Instead of next hop we specify exit interface. where should we send packets as a route of last resort? to whatever is at the end of the interface. Gateway of last resort is not added however, because this is for specifric networks. But what does this mean? it is technically a direct connection to the destination IP. It is basically saying, "I will give this packet to whatever is connected on this interface, and they will route it where it needs to go". And so, when the packet gets to the router on the connected interface, its own routing will carry out the rest of the work.
-* "via" usually refers to interface. Get to network IP via interface IP
+* How do we get around this? This command: `ip route (destination IP) (mask) (exit-interface)`. Instead of next hop we specify exit interface. where should we send packets as a route of last resort? to whatever is at the end of the interface. Gateway of last resort is not added however, because this is for specifric networks. But what does this mean? it is technically a direct connection to the destination IP. It is basically saying, "I will give this packet to whatever is connected on this interface, and they will route it where it needs to go". And so, when the packet gets to the router on the connected interface, its own routing will carry out the rest of the work.
+* `via` usually refers to interface. Get to network IP via interface IP
 
 there might be a problem however, one way reachability. Source can send packets, but without more static routing, the destination cannot send a reply. 
 
@@ -829,9 +829,9 @@ you can use trunk ports to operate several vlans on one interface
 * then enter interface configuration mode, and set the ip for the p2p connectio between the multilayer switch and router. The subnet mask should be 255.255.255.252
 #### Switch side
 * enbable default interface to the router using default interface (interface connected to router)
-* enable ip routing using "ip routing" which allows to build IP table. without this intervlan routing wont work
+* enable ip routing using `ip routing` which allows to build IP table. without this intervlan routing wont work
 * enter selected interface
-* then in the interface, run "no switchport", so that the port becomes a layer 3 routed port
+* then in the interface, run `no switchport`, so that the port becomes a layer 3 routed port
 * configure the ip address as you would on any router to correspond with the p2p connection
 * then on the switch, set the default route, ip route 0.0.0.0 0.0.0.0 (router ip)
 * thyen do show interfaces status, in order to check the interface works
@@ -976,7 +976,7 @@ Spanning tree allows network redundancy, a layer 2 protocol
     * the cost on all root ports of the root bridge is 0
     * say switch 1 isthe root bridge, and all ports are 1 gbps. switch 2 will say, "I was advertised a cost of 0 on my g0/1 (connected to root bridge), my interface costs 4, total is 4". I was advertized cost of 4 on g0/0, my interface cost = 4. total cost = 8. the root port of that switch will be whichever one has the lowest cost, the one connected to the root bridge.
     * if a switch has multiple ports with the same root cost, the interface connected to neighbor with lowest bridge id wil be the root port
-    * what if two switches have two connections between them? the interface connected to the lowest port id is the root port. TO identify this do "show spanning-tree". STP port id = port priority (def 128) + port number. the NEIGHBOR switch's port id is used to identify root port in this case
+    * what if two switches have two connections between them? the interface connected to the lowest port id is the root port. TO identify this do `show spanning-tree`. STP port id = port priority (def 128) + port number. the NEIGHBOR switch's port id is used to identify root port in this case
 3. block ports to prevent layer 2 loops
    * every collision domain has a single STP designated port. Thus on blocked connections, we need to specify the designated port. 
    * to find the designated port:
@@ -1247,7 +1247,7 @@ non designated was split into alternate and backup port role in RSTP
 
 ### Dynamic Routing
 * when dynamic routing is enabled, the router connected to the lan address being advertised send out an advertisement, saying
-* " this ip can be reached via me "
+* "this ip can be reached via me"
 * the router advertised to will then tell its neighbors the same thing, and the route is added to the route table. 
 * This continues, and the route is told to every following router
 
@@ -1757,7 +1757,7 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
 
 ### EUI configuration
 * extended unique identifier
-  * "Modiefied" EUI64
+  * `Modiefied` EUI64
   * convert 48 bit mac address into a 64 bit interface identifier
   * this interface identifier can become the host portion ofa  /64 ipv6 address
 * procedure
@@ -1818,7 +1818,7 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
 
 #### Other address types
 * Unspecified: all 0. ::
-  * "i dont know my ipv6 address
+  * `i dont know my ipv6 address
   * same as 0.0.0.0
 * Loopback: ::1
   * test stack on device. 
@@ -1923,7 +1923,7 @@ RFC5952
     * send in response to RS
     * sent frequently even when no RS received
   * all IPV6 hosts send RS when they connect
-  * " Any routers here ? " " IM A ROUTER! "
+  * ` Any routers here ? ` ` IM A ROUTER! `
 
 #### SLAAC
 Stateless address autoconfiguration
@@ -1983,7 +1983,582 @@ This is a security fundamental
 * ACL made up of ACEs, access control entries
   * if source ip = network x, allow
   * if source ip = network y, block
+* it will block packets even if the route exists
 * acls are configured globally
 * after creation the acl must be applied to an interface
   * inbound or outbound
     * inbound means into the interface from the lan it is connected to, outbound means into the lan from the interface
+    *  in other words, inbound is relative to the interface, facing towards its lan. 
+* The ACL is basically an if elif else chain, it goes through each option until it meets one that is true, and if it finds none it runs else
+* each interface can only have 2 acls, one inbound and one outbound. Specifying a 3rd one will override
+
+### implicit deny
+* what if a packet doesnt match any acl entries? The packet is denied. 
+* If there is no ACE matching the packet, it is denied
+* this is why if you want to allow non-specified traffic to pass through you should have a passthrough ACE for 'any' source IP
+
+### ACL types:
+#### Standard ACL
+match only by source IP
+
+##### NUMBERED
+* standard numbered: identified by number
+  * can use the numbers 1-99 or 1300-1999
+  * from config:
+    * method set 1
+      * access-list (number) deny | permit source_ ip wildcard-mask
+      * access-list 1 deny 1.1.1.1 0.0.0.0, where 1.1.1.1 is the ip and 0.0.0.0 is the wildcard mask, specifying it as a /32 ip
+      * you could also use access-list 1 deny host 1.1.1.1
+      * if you just enter access-list 1 deny 1.1.1.1, it will block that specific ip, since the wildcard mask defaults to 0.0.0.0.
+      * in order to permit all other connections, you would add:
+        * access-list 1 permit any
+        * or, access-list 1 permit 0.0.0.0 255.255.255.255 (ip wildcard combo is the same as any)
+      * to add a comment, you can add a remark
+        * access-list 1 remark ## (description) ##
+      * to see list of access lists:
+        * ip lists: do show ip access-lists
+        * all lists: do show access-lists
+      * do show running-config | include access-list to only show access list entries
+    * method set 2
+      * enter the config mode for the ACL
+        * ip access-list standard 1
+        * example:
+          * deny 192.168.1.1
+          * permit any
+  * applying the ACL
+    * interface (interface number)
+    * ip access-group (number) (in | out)
+
+##### NAMED
+* standard named: identified by name
+  * to config named ACLs, you must enter named acl config mode
+      * ip access-list standard (acl-name)
+    * once in the config mode, you can add the ACEs
+      * deny | permit source_ip wildcard-mask
+      * add remarks the same as with the numbered acls
+      * interface (interface)
+      * ip access-group (acl name) in | out
+      * show access-lists
+      * show running-config | section access-list
+
+##### Advantages of config mode
+* easily delete ACEs with the no command
+  * if you try to delete a specific entry when in global config mode, it will just delete the whole acl
+  * no (entry number)
+  * this easily deletes 
+  * on the other hand if you try to delete from global config mode, you can only delete the entire ACL
+* you can insert new entries between other entries by specifying sequence number
+  * in global config, if you add an ACE, it just gets appended to the end of the ACL with a number 10 higher than the previous
+  * this is why the incrememnt on the numbered acls is 10, if it was just 1 you could insert a new number between 3 and 4. Dont take for granted python datastructures man!
+
+##### Resequencing ACLs
+* ip access-list resequence (acl-id) (starting-sequence-nuber) (increment)
+* example:
+  * ip access-list resequence 1 10 10
+    * 1 = acl id
+    * 1st 10 = what to replace 1st ace index with
+    * 2nd 10 = what is the increment value for each index from ACE to ACE
+
+
+#### Extended ACLs
+remember: extended ACLs should be applied as close to the source as possible 
+same as standard, but can match packets based on source OR destination ip, or source/destination port
+* numbered have the ranges 100 -199 and 2000 - 2699
+* command:
+  * access-list (number) (permit | deny) (protocol/port) (src ip) (dest ip)
+* config mode:
+  * ip access-list extended {name | number}
+    * (sequence number) (permit | deny) (protocol) (src ip) (dest ip)
+  * you can see all the metrics for filtering with deny ? from config mode 
+  * protocol number: remember, encapsulated field of ipv4 packet which specifies protocol, like tcp or udp
+  * you can also just use the name, like tcp or eigrp
+    * 1: icmp
+    * 6: tcp
+    * 17: udp
+    * 88: eigrp
+    * 89: ospf
+    * ip: use this if you want to block all IP packets regardless of encapsulated protocol
+  * source IP: You must include the wildcard like with standard ACL, or you can use the host style. You cant do neither
+  * source ip any blocks all
+  * destination ip:
+    * same a ssource IP
+  * port numbers
+    * to specify sourc eport, specify it after source host and wildcard
+    * likewise, for destination port specify it after the destination host and wildcard
+    * deny tcp (src ip and wildcar) eq (source port number) (destination ip) (destination wildcard) eq (destination port number)
+    * eq: equal to
+    * gt: greater than
+    * lt: less than
+    * neq: all except 
+    * range x y: specify port range from x to y
+  * other options after the ip and wildcard:
+    * ack: match tcp ack
+    * fin: match tcp fin
+    * syn: match tcp syn
+    * ttl: match packets with specific ttl
+    * dscp: match packets with certain dscp value
+
+## CDP and LLDP
+Layer 2 discovery protocols
+### Layer 2 Discovery Protocols
+* share with and gather information from neighbors. 
+* no ip packets in the frames, since this is layer 2.
+* They can however be configured to share layer 3 information
+* includes host name, ip address, device type
+* CDP is Cisco Discovery Protocol, proprietary
+* LLDP, link layer discovery protocol, is industry standard IEEE 802.1AB
+* since these share information about devices they can be security risks and are not often used
+
+### basic overview
+* device 1 frequently sends information to device 2, like interface and device specs
+* device 2 does the same
+
+### CDP
+* enabled on cisco devices by default
+* CDP messages are periodically sent to multicast mac address 0100.0CCC.CCCC
+* despite using multicast, the message is not sent to several devices
+  * neighbors dont forward the packets, its a one stop message
+* by default these messages are sent once every 60 seconds out of all interfaces with an up state
+* The CDP neighbor table hods for 180 seconds. If a device doesnt receive a message from a device in 180 seconds it drops the value from cdp table
+* 2 versions of cdp, cdpv2 by default. cdpv1 is very old and obsolete
+
+### CDP Commands
+* show cdp: show cdp information
+* show cdp traffic: show cdp history
+* show cdp interface: show what interfaces have active cdp on them
+* encapsulation: shows type of ethernet being used
+* show cdp neighbors:
+  * lists device ID, like switch1 or router4
+  * connected interface, what interface is the device ID connected to?
+  * holdtime, how much time is left to receive a new CDP advertisement?
+  * capability, what these letters mean is on the top when command output
+  * platform: model of neighboring device.
+* to get additional information, do:
+  * show cdp neighbors detail
+  * shows vlan, and duplex setting
+  * helps show vlan mismatch
+* to get filtered output, do
+  * show cdp entry (name, like R2)
+* CDP overall is useful for debugging network structures
+* to enable cdp
+  * cdp run
+* to disable cdp
+  * no cdp run
+* to enable or disable cdp on an interface
+  * from interface config mode
+    * cdp enable
+    * no cdp enable
+
+### LLDP
+* industry standard
+* disabled by default
+* devices can run CDP and LLDP
+* LLDP messages use the multicast address 0180.C200.000E
+* lldp messages send by default every 30 seconds
+* hold time is 120 seconds
+* lldp has reinitialization delay. If lldp is enabled, the timer will enable actual initialization by a time. 
+  * why? prevent rapid switcing of lldp on and off. dont need to know this
+
+### LLDP Commands
+* LLDP is usually globally disabled
+* disabled on each interface by default
+* to enable, you must enable it globally then on each interface
+* enable globally
+  * lldp run
+* disable globally
+  * no lldp run
+* on interface
+  * enable transmission 
+    * lldp transmit
+  * enable receiving
+    * lldp receive
+* for lldp you need to enable both transmission and reception
+* lldp time config
+  * lldp timer (seconds)
+  * lldp holdime (seconds)
+  * lldp reinit (seconds)
+* show commands
+  * show lldp, basic statuses
+  * show lldp traffic: show traffic info
+  * show lldp interface: show lldp info for each interface 
+  * show lldp neighbor: the lldp connection table
+  * show neighbors detail: show detailed table information
+  * show lldp entry (name):  get detailed information for just one device name
+
+## NTP
+### Network Time Protocol
+* its necessary that all devices have an accurate clock synchronized with other devices
+* in cisco ios you can see the time with the `show clock` command, by default in UTC
+* `show clock detail` shows the source of the time and date. If there is an asterisk by the time, the device isnt certain. Individual device clocks drift over time.
+* why important to have accurate time?
+  * accurate logs for troubleshooting
+  * networks are relationships between devices. If log times differ, its hard to debug problems that occur between two devices.
+
+* note, a hacker might try to screw up time so system administrators would have a harder time figuring out what they did
+### Logging
+* `show logging` shows device logs
+
+### Clock config
+* you can set the clock time using `clock set (hh:mm:ss) (DAY) (MONTH) (YEAR)`
+* done from priveleged exec mode
+* hardware and software clocks are separate, and can be configured separately
+* hardware clock is calendar, software clock is clock
+* hardware clock can be manually configured using `calendar set`
+  * exactly the same as clock set 
+* you can also sync the calendar and clock using `clock update-calendar` (set calendar time to clock) or `clock read-calendar`
+* you can configure clock timezone using `clock timezone (timezone name) (hours offset from UTC)`
+  * the timezone name doesnt do anything, just a label, thats why you need to specify time offset
+* to configure daylight savings, do: `clock summer-time (time zone name) recurring (start date, week, week day, month, time) (end date in same format)`
+
+**cool command**: `nslookup (url/ip)` shows information regarding dns server ip addresses, and hostname aliases (url names)
+### NTP
+* manual configuration is not scalable. Allows automatic time synchronization
+* NTP clients request time from the NTP servers
+* a device can be a server and client at the same time
+* NTP allows accuracy of time within 1 milliseconds if the NTP server is in the same lan, or 50 milleseconds if connected via wan
+* the further away from the reference clock, the higher the stratum, distance, and the larger the update delay
+* NTP hierarchy:
+  * a stratum is a layer in the higherarchy, it represents distance from the source of the time
+  * atomic clocks or gps clocks are reference clocks, the origin. Stratum 0, these are the references
+  * NTP servers directly cnnected to reference clocks are stratum 1, like military/ government supplied ntp server clocks. These are primary servers
+  * the levels above stratum 1 are secondary servers
+  * the chain keeps going until stratum 15, anything beyond that is unreliable
+  * devices can get reference from other servers at the same stratum as a backup, or to increase accuracy. This is peering, symetric active mode
+* the 3 modes for ntp are server, client, and symmetric active
+
+### NTP configuration
+* connect to an NTP server using `ntp server (server ip)`. get server ip using `nslookup (url)`. this enables client mode
+* you can have multiple NTP servers at once, it is best to specify several in case there is a failure in one.
+* to make a device prefer one server, you can add `prefer` to the end of the `ntp server` command
+* to show all ntp saervers, run `show ntp associations`
+  * `*` means that the host is currently using this server
+  * `+` means the server is a candidate but not actively being used
+  * `- and x` mean the server isnt reliable and wont be used
+  * `st` field displays stratum of server
+* `show ntp status` shows synchornization status, and the stratum level of the host
+* what if I have some other routers nested deeper that I want to use a central router as an NTP server?
+  * configure a loopback interface on the central router (see OSPF)
+  * loopback interface is an address you can use to reach a device that is independent of physical interfaces
+  * even though it is a loopback, the source ntp server will share it to connected routes, so any ntp client can reach it if their physical interface failed, just with an intermediary
+
+### NTP server configuration
+* suppose there is no longer access to a clock outside the network, you still should configure synchronization within the LAN
+* `ntp master (stratum)` will make the host the master clock in the network
+  * this will set the ntp connection to be a loopback, with a stratum of 8 by default, or whatever stratum you specify
+    *  show ntp associations will show a stratum of stratum -1 for the master server
+  * Loopback interfaces are virtual interfaces that can be advertised, loopback addresses are totally internal to the local device.
+
+### Symmetric active configuration
+* `ntp peer (ip address)`. This will sync two hosts at the same stratum
+
+### NTP Authentication
+* defend against hackers messing with time to cover their tracks
+* `ntp authenticate` to enable ntp authentication
+* `ntp authentication-key (key number) md5 (key)`, where key number is just an identifier and key is the password
+* `ntp trusted-key (key number)` to trust the key with the select identifier
+* these 3 commands must be done on all of the devices, clients and server
+  * you must manually add the same key to all devices
+* then on the clients, you must run
+  * `ntp server (server ip) key (key number)` to add the authentication key to the server connections
+  * `ntp peer (peer address) key (key_number)` to add the authentication to peer connections
+
+## DNS
+`ipconfig /all` shows all information about interface, including DNS server IP. nslookup does the same 
+### Purpose
+Domain name system
+* Resolve, or convert, human readable names to ip addresses
+* DNS Servers map DNS hostnames to ip addresses. When you search a url, you send a request to DNS and it returns the IP so you can connect
+* you can discover DNS servers via DHCP
+* if you nsloopkup a url, it will return a DNS server authoritatively. It will ask the dns server what the actual IP is
+
+### Operations
+* workflow:
+  * I ask DNS server what is the IPv4 of a url
+  * DNS server responds with the A record, ipv4 address
+  * I ask DNS server what is the IPv6 of a URL
+  * DNS server responds with the AAAA record, IPv6 address
+* often there is no need to do dns config on routers, since for pc hosts they are usually just forwarding DNS requests
+* DNS usually uses UDP for short messages, and TCP is for messages larger than 512 bytes. Port 53 is used
+
+### DNS Cache
+* `show hosts` displays DNS cache on cisco
+* devices save DNS server responses to a local DNS cache, so they dont have to query DNS every time they want to visit a URL
+* to see this, do ipconfig /displaydns on windows
+* sometimes DNS cache records have a CNAME record
+* CNAME records map one URL name to another URL name.
+* usually the CNAME url maps to the ip
+* you can clear the dns cache using ipconfig /flushdns
+
+### Hosts file
+* The host file contains mappings of hostnames to ips. If you put the statement `(ip address) (desired hostname)` in that file (on windows this is c:/system32/drivers/etc/hosts), you can ping that IP just by pnging the hostname. EG, if you assign the name R1, you can just do `ping R1`. This is a simple alternative to DNS usually for small networks
+
+### Local DNS Servers
+* if you want to have domain name routing only within a LAN, you can configure a router as a DNS server
+* `ip dns server` enables DNS server operations
+* `ip host (domain name) (ip)` maps a domain name to an IP
+* with both of these commands, if the router receives a DNS request, it will return a DNS reply with mapped IP address to the requester
+* `ip name-server (external dns server IP)` this will specify an external DNS server, like google's to query if the local DNS server doesnt have a mapping for a specific hostname
+* `ip domain lookup` enable the server to query the external DNS server
+* if you only do the last two commands, it configures the host as a dns client, and it will not handle requests from connected clients
+* lastly, you can configure the default domain name
+  * this will append the default domain name to the end of any hostnames without specified domain.
+  * `pc1` becomes `pci.default_domain_name` 
+
+## DHCP
+Dynamic host configuration protocol
+### Purpose
+* allows to automatically figure characteristics of network config, such s ip, subnet mask, default gateway, dns server without manual config
+* this is why when we connect to wifi, we dont have to manually set a default gateway
+  * DHCP tells a host what ip, subnet mask, and interface to use when it connects to a nework command
+* mostly used for client services
+* routers, servers, and stuff are usually manually configured because they need static IPs, and other things. 
+* In small networks the router is usually the DHCP server, in larger ones its a dedicated machine
+* using `ipconfig /all` we can see DHCP enabled.
+  * we can also see ipv4 address, if it is 'preferred' it means the ip was previously assigned
+  * dhcp lease
+    * DHCP lease IP addresses to clients. These are not permanent and the client must give up the address at the end of the lease
+    * without DHCP leasing, every individual device that connects and disconnects will get a new special IP address, not good because there are limited addresses, and to re-allocate an IP, a lease would need to be manually released
+    * if connection is maintained after lease ends, the lease is auto-renewed and 
+  * default gateway, dhcp server, and dns servers are also displayed. On home network, these are usually the same device, the router
+* the windows command to release a lease is `ipconfig /release`
+* `ipconfig /renew` will send a DHCP discover message to get a new address
+
+### 4 message DHCP leasing process
+* dhcp server use UDP port 67, DHCP clients use UDP port 68
+* DHCP message includes message options. some of these are:
+* * magic cookie (demarcates the start of the options field in a DHCP packet)
+  * DHCP message type
+  * DHCP server identifier (ip)
+  * DHCP client identifier
+  * End
+
+#### DHCP discover
+* broadcast message from client asking if there are any DHCP servers in the network
+  * DHCP server learns the IP and mac of the client connecting
+  * client IP address (0.0.0.0 if the client is asking for a new ip, and as such doesnt have one yet)
+  * bootP flags field, important for next step. This will tell DHCP server to use either unicast or broadcast when communicating with the client
+  * requested IP address (ip address the client wants, only requested if the host was previously connected to the server. Otherwise the DHCP will handle ip assignment alone)
+
+#### DHCP Offer
+* message from DHCP server to the client offering it a specific IP Address, sent as unicast to the mac address
+* whether unicast or broadcast is determined by the bootP flag of the discover message
+  * why would broadcast be used? some devices dont accept unicast before they have an IP configured. Thus the DHCP server must broadcast to the whole network 
+* options
+  * lease time
+  * domain name server
+  * router
+
+#### DHCP Request
+* broadcast message that tells all dhcp server on a network which server it is accepting the offer of, so that other DHCP servers know that they are not being accepted, and so the client can continue the process with the server it wants to communicate with
+* if there are multiple DHCP server in a network, the client broadcasts to all of them when doing discover. Thus it needs to tell the DHCP server it is requesting from that it is accepting that DHCP offer
+* client usually accepts the first offer it gets
+* options
+  * dhcp identifier: this is how the client knows which DHCP server IP to communicate with when it accepts an offer
+
+#### DHCP ACK(nowledgement)
+* response from server to client telling the client it may use the requested IP address
+
+you should check out the DHCP wikipedia page
+
+remember, the sequence acronym **DORA**
+and remember what the release does
+
+### DHCP relay
+* for small networks routers can be DHCP servers
+* For large ones its better to have one big central DHCP server from which routers can gather information
+* however, if the dhcp is centralized, DHCP discovery broadcast messages wont reach the DHCP server. Recall, broadcast messages dont leave the local subnet. If there is a router between the DHCP server and client, the messages wont go through
+* thus routers should be configured as DHCP relay agents
+* DHCP relays will forward broadcast DHCP messages to the DHCP server as a unicast message
+* the DHCP message process works the same just with a middleman router
+  
+### Router as DHCP server
+* `ip dhcp excluded-address (ipv4 address range)`: this specifies IP addresses that wont be allocated to DHCP clients
+* `ip dhcp pool LAB_POOL` to create DHCP pool and enter DHCP config mode
+  * subnet of addresses to be assigned to DHCP clients
+  * also includes DNS server address and default gateway
+* to configure this range of addresses for the DHCP pool: `network (network address) (network mask / prefix length)`
+* `dns-server (ip)` configures what IP the dhcp will use as the default DNS server
+* `default-router (router ip)` configures what IP dhcp will use as the default gateway IP
+* `lease (num days) (hours) (minutes)` configures the standard lease time for DHCP or `lease infinite` (BAD IDEA)
+* last 3 must be done in DHCP config mode
+* `show ip dhcp binding` shows all current DHCP clients with DHCP addresses
+
+### Router as DHCP Relay Agent
+* enter interface config mode for interface connected to subnet with clients that want DHCP
+* `ip helper-address (DHCP server address)` to say what the dhcp server address is. For this, you need to have a route, either static or dynamic to the dhcp server
+
+### Router as DHCP client
+* from interface config mode
+  * `ip address dhcp`
+* then the router sends out a DHCP discover message on that interface
+* this will determine the interface's ip address
+
+## SNMP
+### Overview
+* industry standard protocol, simple network management protocol
+* structuring and identification of managemet information fro tcp ip based internets
+* not very simple anymore
+* Monitor device status, make config changes etc
+* 2 device types:
+  * managed: being managed by SNMP
+  * Network management station/system (NMS): devices managing the devices mentioned above
+
+### Operations
+NMS might be configured to notify sysadmins of events
+* managed devices can notify the NMS of events
+* NMS can ask the managed devices for information about their current status, like CPU usage and stuff
+* NMS can send new configurations to network devices 
+
+### Components
+#### NMS
+* probably not a machine dedicated to SNMP, it could just by the sysadmins pc
+* the SNMP manager interacts with managed devices, handles notifications, requests, and configurations
+* SNMP application: interface for the network information
+
+#### SNMP Agents
+* SNMP agent is the software running on the managed device
+* sense notifications and receives requests from the NMS\
+* MIB: Management information base, sturcture containing variables managed by SNMP
+  * each is an object identified by object ID, OID.
+  * device temperature, cpu usage, etc
+
+#### OID
+* organized hierarchically
+* format:
+  * .iso.identified-organization.dod.internet.mgmt.mib-2.system.sys_name, for example is the oid for hostname
+  * oid-info.com
+
+### 3 Versions
+* SNMPv1: original
+* SNMPv2c: allows the nms to retrieve large amounts of information in a single request
+  * c refers to community strings used as passwords.
+* SNMPv3: The best
+  * much more secure, supports strong encryption and authentication
+
+### Message Types
+* read
+  * messages sent by NMS to get info from managed device
+    * Get: retrieve the value of an oid, or list of oids. Agent will return these values
+    * GetNext: request to get a list of available variables in agent MIB
+    * GetBulk: more efficient GetNext introduced v2
+* write
+  * messages sent to Agent from NMS to change information on managed devices
+    * set: set an oid to a select value
+* notification
+  * message sent by devices to notify NMS of an event
+    * Trap: sent from agent to manager, no response
+      * unreliable because no response, UDP
+    * inform: notification acknowledge with a response. 
+* response: messages sent in response to previous request
+* snmp agents listen on port 161, snmp managers on 162
+
+### Configuration
+* Only for agents
+* `snmp-server contact (email)`: send information to email in case of error
+* `snmp-server location (location)`: tell where the server is, just a descriptor
+* `snmp-server community (community string) ro | rw`: community string is a password. ro means read only, rw means write only. the ro/rw means that if an NMS uses the community string, it will have either of these permissions
+* `snmp-server host (host ip) version (version, like 2c) (community string)`: specify the IP of the NMS, which the snmp agent will connect to. The community string specified determines what the NMS can do, read or write
+* `snmp-server enable traps snmp linkdown linkup`: send trap notifications if there is a change in interface state
+* `snmp-server enable traps config`: enable notifications for config changes
+
+## Syslog
+### Purpose
+* protocol to keep logs of events
+* logs can be shown in realtime on CLI, or stored in a server to be examined later 
+* industry standard
+* syslog works with SNMP usually to troubleshoot devices. They complement each other with very different functions
+
+### message format:
+* sequence number:time stamp: %facility-severity-MNEMONIC:description
+* sequence number: indicating the place in the sequence of saved messages
+* time stamp: when the log was generated
+* facility: what process generated the mssage? like OSPF
+* severity: how bad was whatever happened?
+  * debugging 7
+  * informational 6
+  * notice/notification 5: normal but important notification
+  * warning 4
+  * error 3
+  * critical 2
+  * alert 1
+  * emergency 0
+* mnemonic: short code for the message indicating what happened 
+
+### Send Locations
+where do syslog messages go?
+* console line: messages sent to the CLI
+* VTY lines: messages will be displayed when connected to device via telnet or ssh. disabled by default
+* buffer: syslog messages to be saved to ram. All messages displayed 
+  * view using `show logging`
+* external server: send syslog messages to external server
+* syslog server listen for messages on UDP 514
+
+### Configuration
+* `logging console (level, 0-7)` to enable logging for the level and all levels above
+* `logging monitor (level)` enables logging to VTY lines
+  * even if this is enabled, by default the messages will not be displayed to telnet or ssh users. To enable you must enter `terminal monitor`
+  * that command must be used every time you connect using ssh or telnet. That creates a vty syslog session that expires after disconnection
+* `logging buffered (buffer size) (level)` sets a buffer size for logging to the specified size, and enbales buffer logging
+* `logging (logging server ip)` or `logging host (server ip)` enable a logging server for log messages
+* `logging trap (level)` specifies logging level for the external logging server
+* if you get a log message while typing a command, this messes everything up, since the log appears in the middle of what youre typing
+  * to fix this, enter line config mode with `line console 0`
+  * then run `logging synchronous`
+  * then `exit`
+* `service timestamps log datetime/uptime`: tell syslog to log times. datetime specifies to log exact time, uptime specifies to log how long since the device was turned on 
+* `service sequence-numbers` enables sequence numbers
+
+### Syslog VS SNMP
+* complementary
+* syslog
+  * message logging, categorization
+  * system management analysis and troubleshooting
+  * server cant actively pull logs from devices
+* SNMP retrieve and organize deevice information
+  * ip addresses, current interface state, all variables
+  * supports get requests to get information, and set to set variables
+
+## SSH
+* alternative, remote way to configure devices without a console port
+
+### Console Port Security
+* by default no password is needed to access a cisco device via console port
+* you can configure a password to make this more secure
+  * enter console config mode with `line console 0`
+  * `password (password)` to create password
+  * `login` will enable password requirement
+  * `exit`
+* you can also configure users for a device, like with a shared linux machine
+  * `username (username) secret (password)`
+  * `line console 0`
+  * `login local` to require user to login using on eof the configures users on device
+  * `end`
+  * `exit`
+* `exec-timeout (minutes) (seconds)` sets inactivity timeout for console
+
+### Remote management of layer 2 switch
+* no packet routing, no routing table. Only forward lan frames
+* you can assign IP to SVI, switch virtual interface, to allow remote connections to CLI using remote shell services
+* SVI config is the same as default gateway on a multilayer switch
+  * `interface (vlan#)` enter vlan interface config mode
+  * `ip address (ip) (subnet mask)` configure ip address for SVI 
+  * `no shutdown` enable interface
+  * `exit` exit interface cfg mode
+  * `default-gateway (default gateway for network)` configure default gateway of the switch so that devices in other vlans can access
+
+### Telnet
+* ssh precursor
+* teletype network
+* proto-remote-bash
+* obsolete and security risk
+  * PLAINTEXT!!!
+* TCP port 23
+
+### Telnet configuration
+* `enable secret (password)` wihtout enable secret no remote access
+* `username (username) secret (password)` enable user access if you want
+* also a good idea to configure an ACL to restrict who can remote bash into your devices
+* `line vty (lower vty line limit) (upper vty line limit)` telnet and ssh line needs vty lines. Limit of 16 vty lines, 0-15. 16 users can remote access these devices
+
+
+## FTP/TFTP 
