@@ -2562,3 +2562,114 @@ where do syslog messages go?
 
 
 ## FTP/TFTP 
+* FTP, file transfer protocol, tftp, trivial file transfer protocol, are industry standard file transfer systems on the server model
+* clients can use can use these to copy files to and from the server
+* good for upgrading the software on network devices
+* download newer version of cisco IOS from a server and reboot those devices to a new IOS
+
+### updated with FTP
+* load file onto the server in LAN
+* use ftp to copy the file to memory of the desired device
+
+### TFTP
+* Simpler than FTP
+* Lightweight basic version of FTP. Only copy file to and from a server
+* no authentication. Servers respond to all FTP requests as long as the FTP port is open
+* no encryption either
+* TFTP is best used in controlled environment to transfer small, unimportant files quickly
+* UDP port 69
+* TFTP has its own means of ensuring reliability
+
+### TFTP reliability
+* all TFTP messages are acknowledged
+* this means that if the client receives no ack, it knows it has to send the message again
+* if the server is sending to the client, the client returns ack
+* timers are used. If the timer exceeds a threshold, retransmission
+
+1. Read request from client
+2. data response from server
+3. failed ACK from client to server, client receives no more data because ack didnt go through
+4. ack retransmission by client
+5. server sends more data
+6. ack sent by client
+7. repeat until the whole file is received
+
+* in this process, the device acting as the client is the only one that does retransmission
+
+### TFTP connections
+* 3 phase connection from client to server
+    1. Connection: Client sends request to server, server responds back initializing connection
+    2. Data transfer: the client and server exchange TFTP messages. One send data, the other acks
+    3. Termination: after the last datagram is received, final acknowledgeemnt is sent and the connection ends.
+
+### TFTP TID
+* when first message received by server, destination is UDP69. SOurce is a random ephemeral
+* random port is called a transfer identifier, TID
+* The server also selects a random tID to be used as the source port for replying to the client, not UDP 69
+* The next client message will be directed at this TID port, not UDP 69
+* UDP 69 is only used in the first connection message from client to server
+
+### FTP
+* TCP port 20 and 21
+* usernames and passwords supported, but no encryption
+* FTPS (ftp over ssl and tls) is used to upgrade to security
+* SFTP SSH file transfer protocol can be used for greater security
+* FTP can be used for directory navigation as well as copying
+* client sends FTP commands, rather than requests and acknowledgements
+
+### Control COnnections
+* FTP uses 2 connection types
+  * control connection on TCP 21 for sending commands and replies
+  * data connection file transfers work on TCP 20
+1. the same process for establishing the connection, using requests and acks occurs 
+2. ftp client sends commands, and the server replies on tcp 21
+
+### Modes for FTP
+* ftp can work in two modes
+* active and passive mode only apply to data connection 
+* acive mode
+  * default connection is active mode in which the server initiates the tcp connection
+  * the control connection is maintained throughout the process
+* passive mode
+  * the client intiates the connection
+  * important when there is a firewall in front of the client
+  * a firewall might accept FTP replies, but wont accept incoming connection as a security measure
+
+### Comparison
+* FTP
+  * TCP
+  * commands and file transfer
+  * supports auth
+  * no encryption
+* TFTP
+  * UDP
+  * only file copying
+  * no auth
+  * no encryption
+
+### IOS File Systems
+* you can view the file systems of a cisco IOS device with `show file systems`
+* different file systems
+  * disk: flash memory
+    * on startup, the OS is loaded from flash to ram
+  * opaque: internal function
+  * nvram: non volatile ram, startup config file stored here
+  * network: external file systems accessed via ftp and tftp
+* `show version` command shows IOS information
+* `show flash` reveals the contents of flash, the operating system
+* you can use ftp to load a new version of cisco IOS onto a network device
+* to do this with tftp:
+  * `copy (ftp/tftp) (destination system, like flash)`
+  * it will then ask for hostname, enter the device lan IP
+  * then it asks for source filename and destination filename
+  * you must know the local and remote filepath of the file you are transferring, tftp cant handle that by itself
+  * how can we make the device use the new file as the os?
+    * `boot system (filepath)`
+    * otherwise, the device will use the first IOS file it finds
+    * then to save the changes, run `write memory` and `reload`
+    * to delete the old os file, run `delete` filepath
+* to do this with ftp
+  * before running ftp operations, configure the username and password
+    * for username `ip ftp username (username)`
+    * likewise, `ip ftp password (password)`
+
