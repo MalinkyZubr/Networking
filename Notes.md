@@ -2874,3 +2874,118 @@ where do syslog messages go?
     * This way, packets can still enter the queue since it isnt full, and other devices will experience slower network connection, avoiding the global sync problems
 * Weighted random early detection, WRED allows to control priorities. High priority packets wont be dropped
   * possible to exploit this for targetted DDoS??
+
+### Classification
+* purpose of QoS is to give certain network traffic priority
+* classification organized traffic into classes
+* traffic identifiers allow for organization 
+* classification methods:
+  * ACL
+    * permitted traffic is high priority
+    * denied traffic is low priority
+  * NBAR
+    * deep packet inspection, looking to layer 7 to identify the specific sort of traffic being sent
+  * layer 2 and 3 headers
+    * PCP (priority code point) in ethernet header identifies prioritty, high or low (layer 2)
+      * within the .1Q tag, for VLANs. 
+      * also referred to as COS, class of service
+      * IEEE 802.1p
+      * 3 bits
+        * 0, best effort
+          * no guarentee that the data gets to the destination, just regular traffic
+        * 3, critical
+        * 4, video
+        * 5, voice
+          * it is important to note that the call signal for VoIP phones is classified as 3, but the actual call is 5
+      * unfortunately this means the PCP can only be used over trunking links, or on the native vlan
+      * the exception is access links with voice VLAN
+    * DSCP field of IP header also used in the same way (layer 3)
+      * ToS byte, type of service
+      * IPv4 header
+      * 2 parts: DSCP, ECN
+        * Differentiated Services Code point
+        * Explicit Congestion Notification
+      * 6 bits for DSCP, 2 for ECN
+      * preceeded by IPP
+        * IP precedence
+        * 3 bits
+      * DSCP: 
+        * RFC 2474
+        * new more generalized markings, industry standard
+          * Defualt forwarding: best effort traffic
+            * 000000 in the header
+            * marking 0
+          * expedited forwarding: low loss latency, voice
+            * 101110 in header
+            * marking 46
+          * assured forwarding, AF, set of 12 standard values
+            * four traffic classes. All packets in one class have same priority. Higher class number have higher priority
+            * within a class there are 3 drop precedences
+              * higher DP means more likely to drop packets in congestion
+              * anatomy:
+              * first 3 bits represent class, 4th and 5th bit represent drop precedence, the final bit is always 0
+            * when writing an AF marking, we do AFXY
+              * what is XY?
+              * X is the decimal number of the class, Y is the decimal number of the drop precedence
+              * the normal DSCP value is just the value of the entire AF header
+              * AF 43 is the highest it goes
+              * to go from AF to DSCP, do 8x + 2y
+          * Class Selector: set of 8 standard values provides backward compatability with IPP
+            * 8 DSCP values for backward compatability with IPP
+            * the 3 bits added to support DSCP are all set to 0. The original 3 IPP comprise 8 values
+            * CS values always denotes as CS 0-7
+              * to get the DSCP value of the CS tag, multiply the number by 8
+* when configuring QoS class maps identify what traffic to match. `class map (class name)` to create
+* `match dscp (dscp identifier, af, cs, df, ef)`
+
+#### How is all this used?
+* RFC 4954 aims to standardize how these are used
+  * voice traffic: EF
+  * interactive video: AF4x (anything with the class number to 4, and drop precedence to anything)
+  * Streaming video: AF3x
+  * high priority dataL AF2x
+  * Best effort: DF
+
+### Trust Boundaries
+* The boundaries where they do and dont trust QoS markings
+  * if markings are trusted, messages forwarded unchanged
+  * otherwise, the device changes markings according to their own QoS policy
+* say a trust boundary exists at switch 1, and phone 1 is sending a packet with EF, CoS/PCP 5
+  * the switch doesnt trust the QoS marking since it is at the boundary, and switches the packet to DF, CoS 0
+  * usually the trust boundary should be on the phones internal switch, so it can prioritize its own traffic
+  * that way users can artificially increase their speed
+
+### Queuing and Congestion Management (again)
+* remember, when network receive data faster than it can send it, the queue becomes full
+* when this happens, packets drop, either tail drop ( drop anything coming in once full) or using RED/WRED to avoid global TCP synchronization
+* QoS essentially relies on multiple Queues
+* this is where classification comes in. Device matches traffic based on DSCP markings and such, and then put it in the proper queue
+* although the device can only forward one frame at once, it uses a scheduler to asynchronously forward traffic
+* prioritization provides the scheduler with a sense of what order, and how quickly to empty certain queues
+
+#### Queueing scheduling management
+* weighted round robin
+  * common scheduling strategy
+  * packets are taken from each queue in order, cyclically
+  * more data is taken from hig priority queues
+* CBWFQ (class based weighted fair queueing)
+  * uses weighted round robin, while guarenteeing each queue a certain percentage of avaialble bandwidth during congestion
+* round robin isnt good for voice video traffic though, it adds delay and jitter. They have to wait their turn in the scheduler!
+* LLQ (low latency queuing)
+  * designates one or more queues as strict priority queues
+  * if there is any traffic in the LLQ, the scheduler always takes the enxt packet from the queue until it is empty
+  * very good for reducing the delay and jitter of voice
+  * however, it can potentially starve other queues, preventing the other queues from doing anyting
+
+#### Shaping & Policing (continued)
+* boht used to control traffic rates
+* what if interfaces are not operating at or above full capacity but we still want to limit traffic?
+* shaping
+  * buffers traffic to a queue if the rate goes over configured rate
+* policing
+  * drops traffic if traffic rate goes over the configured rate
+  * burst traffic is allowed for a short period, so applications that send large data over a short period can operate
+* classification can be used for different classifications
+* but why?
+  * what if a customer only bought a 300 mbps connection on a 1 gbit port? They can only transmit data at 300 mbps, way under the specs of the hardware
+* 
