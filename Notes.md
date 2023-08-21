@@ -2673,3 +2673,204 @@ where do syslog messages go?
     * for username `ip ftp username (username)`
     * likewise, `ip ftp password (password)`
 
+## NAT
+### Network Address Translation
+### Private IPV4
+* IPV4 doesnt provide enough addresses for all devices to be globally unique
+* solutions:
+  * CIDR, subnetting
+  * private IPV4 addresses
+    * private on ranges
+      * 10.0.0.0/8, 10.0.0.0-10.255.255.255
+      * 172.16.0.0/12
+      * 192.168.0.0/16
+      * one range from class a b and c
+      * private IP addresses usually exist only within lans
+      * private IPs cant access the internet. This is where NAT comes in
+      * RFC 1918
+### NAT
+* suppose there are two routers connecting over the internet, each having one client connected to their respective lans with the same private IP addresses. How does the client in one lan communicate with the client in another?
+  * duplicate addresses
+  * private addresses cant be used over internet
+* NAT solves both
+  * alhtough private IP addresses are not unique, the public IP address of router is
+  * NAT allows the lan client to borrow the public IP address to access the internet
+  * any number of devices can borrow the router's public IP to access the internet
+
+### In depth
+* modify source and destination IPs of packets
+  * allow hosts with private IPs to communicate with other hosts with private IPs
+  * thus multiple hosts can share a single public IP
+
+#### Source Nat
+* PC1 has the IP of 192.168.0.167 
+  * destination is the 8.8.8.8 server (google)
+  * steps for source NAT:
+    1. pc1 sends packet to router
+    2. router replaces the original source IP of pc1 to be the ip of the router external interface
+    3. sends to 8.8.8.8
+    4. server at 8.8.8.8 sends the packet back
+    5. router receives on public interface and reverses the translation, setting destination IP to that of pc1, forwarding it to pc1
+
+##### Static Nat
+* This means manually configuring a one to one mapping of private IPs to public IPs (or any ip to any other ip)
+* an **inside local** address is mapped to an **inside global** address
+* inside addresses:
+  * inside means in lan, for instance, on the router private interface
+  * inside local address:
+    * the ip address of the host as other devices inside the lan see it. If one device wants to send a packet to another device in the lan, this is the address they use
+    * what is pc1's address?
+  * inside global address:
+    * the ip address of the inside host from the perspective of the outside hosts
+    * the ip address of the host, like pc1 AFTER nat translation, eg when the router translates pc1's packet after it is sent out
+    * this is the unique IP public ip address for the private IP
+* since static nat is under the umbrella of source nat, the source nat is changed when nat happens. However, this source nat is whatever the admin configures
+* but this kind of defeats the purpose of private IPs, since it means every device that wants to communicate with the internet must have a globally unique IP address
+
+##### Static Nat Configuration
+1. define the inside interface with `int (interface number)`, then `ip nat inside`
+2. then define the outside interface with `int (interface number)` then `ip nat outside`
+   1. both cases just require you do the main command inside interface config mode
+3. once this is set up, you can configure the ip address mappings using `ip nat inside source static (inside IP address) (outside ip address)`
+4. to see entries to nat tables, do `show ip nat translations`
+5. each time a static nat entry is used, a dynamic nat entry is added
+6. to clear these dynamic nat translations, use `clear ip nat translation *`
+7. to see information about nat operations, do `show ip nat statistics`
+  * shows peak translations, maximum number of translations using the table
+  * total active translations
+  * outside and inside interfaces
+
+##### outside local and outside global
+* outside local
+  * IP address of the outside host from the perspective of the local network. what does pc1 think the address is?
+* outside global
+  * what is the ip address of the outside host from the perspective of the outside network, wan
+* unless destination NAT is used, these two will always be the same
+* inside/outside indicate location of host, inside or outside the local network?
+* local/global indicate perspective from which that host is being viewed. Local network, or global network?
+
+### Dynamic Nat
+* in a dynamic nat, the router automatically maps inside local and global addresses to one another
+* ACLs are used to identify what should be translated and what should be blocked
+  * if the source IP is permitted, it will be translated
+  * if the ip is denied, it will not be translated, but will not drop the traffic
+* a nat pool sepcifies the range of addresses available to translate to
+* although the mappings are dynamic, they are still globally unique. 
+* what if all addresses in the nat pool are in use already? this is pool exhaustion
+  * in this case, any host that tries to use dynamic nat will have its packets dropped due to saturation of addresses
+  * the host cannot access outside networks until the pool exhaustion is over
+    * pool exhaustion is averted by automatic nat timeouts, or manual cancellations
+    * this is the key advantage of dynamic NAT, so addresses are only used when needed
+* dynamic nat still doesnt allow for 2 hosts to use the same outside global IP!!! for this we need PAT
+
+#### Dynamic Nat Configuration
+1. enter inside interface config mode `int (interface)`
+2. `ip nat inside`
+3. enter outside interface config mode `int (interface)`
+4. `ip nat outside`
+5. permit traffic from desired host on the ACL
+6. define the nat pool with `ip nat pool (pool name) (lower address limit) (upper address limit) netmask (subnet mask)`
+7. finally, configure dynamic nat by mapping ACL to pool with:
+   1. `ip nat inside source list (ACL #) pool (pool name)`
+
+* remember in the NAT table, a new entry is created whenever NAt is used for a connection or request. These clear after a minute
+* the default dynamic mappings last 24 hours
+### Port Address Translation
+*  aka nat overload
+*  translates the port number and address
+   *  by using a unique port number for every local host, many such hosts can use a single inside global address
+   *  the router then keeps track of the port number and address mappings
+   *  in short, two hosts can use the same inside global IP, as long as they use different ports for communication
+* so then how does something like ssh work over the internet if it needs port 22?
+  * only the source port is changed, the destination port attached to the destination address is still 22.
+  * Once the destination server receives and responds, it sends a packet back to the origin ip and port
+  * the origin router translates the packet source ip:port back to the inside local address, and the host receives the response
+  * additionally, since the translation only happens inside the router, hosts can use the same ports for specific services at the same time. 
+  * this is why when capturing packets with wireshark, an ssh message from host to router will have source and destination port of 22 still!!
+* this basically eliminates the issue of public ip exhaustion. PAT is the most widely used form of NAT
+* one IP address can represent many thousands of hosts
+
+### PAT configuration
+* PAT config is the same as dynamic nat, except you add one keyword to the last command:
+* `ip nat inside source list (ACL #) pool (pool name) overload`
+
+* you could also configure the router to use its own public facing interface address as the inside global address, using the command:
+* `ip nat inside source list (ACL #) interface (interface number) overload` 
+
+## QOS
+* quality of service
+* used to prioritize certain types of network traffic to make some services smoother
+
+### IP phones
+* traditional phones operate over public switched telephone network, PSTN
+* IP phones use VoIP, sending voice data using IP over a network
+* connected to a switch
+* IP phones generally have  a3 port internal switch
+  * uplink, to the external switch
+  * downlink, to the PC
+  * internal, to the phone itself
+  * thus, network traffic goes through the IP phone to the PC, and back.
+  * this is better because it needs less confiugration in big enterprise networks. Both the PC and phone have the same switch ports
+  * we get half the ports for the same number of devices, better
+  * best to also place phones and pcs in separate VLANs, voice vlans. 
+  * how can we configure a voice vlan on a switchport?
+    * when in interface config mode, do:
+      * `switchport voice vlan (vlan number)`
+    * pc1 will send traffic untagged as normal, and switch 1 will use cdp to tell the phone to tag its own traffic in vlan11
+    * even if there is a voice vlan and a regular vlan on the same switchport, it does not require trunking!
+  * thus, we have data vlan and voice vlan
+
+### Power Over Ethernet
+* how do the IP phones get power? its inconvenient to have another power cable for all phones
+* PoE allows powered devices to draw electricity from a power supplying device, like a switch, over an ethernet cable
+* PoE has a method to determine how much power a device needs, so its not overloaded
+* when a device is connected to a PoE enabled port, the PSE switch sends low power signals, monitors response, and determines how much power the device needs
+* the PSE continues to monitor the device and supplies the rrequired power
+* configure power policing to prevent too high power draw
+  * `power inline police` configures power policing with the default settings, to disable port and send syslog message if too much power is drawn
+  * you could also do `power inline police action err-disable/log`
+    * when set to 'err-disable' the interface goes to 'error disabled' and must be restarted with `shutdown` then `no shutdown`
+    * if its set to log, the PSE just logs the issue and the device keeps going
+* originally, cisco invented cisco ILP. 
+  * later these were standardized. Power supply capability continuously went up every iteration of the standard
+  * ILP -> PoE type 1 -> PoE+ type 2 -> UPoE type 3 -> UPoE+ type 4
+
+### Quality of Service
+* why QoS?
+* Voice traffic and data traffic used entirely different networks.
+* Since this required two separate networks, it was cost inefficient
+* however, when these were integrated, data and phone traffic started competing.
+* Since voice requires very high quality connection, it is given network priority
+* some types of packets get high priority treatment, others get low priority
+
+#### Characteristics
+1. Bandwidth, overall capacity of the link. QoS tools allow to reserve a certain amount of link bandwidth for specific kinds of traffic
+2. delay: amount of time it takes for traffic to go source to destination = 1 way delay. TIme to go there and back, to way delay
+3. Jitter: variation in one way delay for individual packets. Bad audio quality. IP phones have jitter buffer to prevent jitter buffer. However too high of jitter overrides this
+4. loss: % of packets that dont reach their destination. Due to faulty cables, or congested queues dropping packets
+
+* recommended characteriustics of interactive audio
+  * one way delay: 150 ms or less
+  * jitter: 30 ms or less
+  * loss: 1% or less
+* these provide decent experience
+
+### Queueing
+* if a device receives packets faster than it can send them out of another, it puts the incoming packets into a queue. Packets forwarded in first in first out, in general
+* if the queue is full, all packets incoming will be dropped
+  * this is tail drop
+* tail drop is bad beecause it can lead to TCP global sync
+  * global means within the network
+  * why is that bad? 
+  * TCP use sliding window to increase/decrease rate at which they send traffic
+  * when a packet is dropped its retransmitted, and transmission rate is reduced
+  * transmission rate slowly increases after
+  * when multiple tcp clients have the same behavior, they will all increase transmission rate at the same time, and lead to more congestion. 
+  * it is a terrible cycle!!
+  * waves of underutilization and overuitilization
+  * solution:
+    * random early detection, RED
+    * when traffic in queue reaches a threshold before being completely full, the device receiving packets will drop random packets being received. 
+    * This way, packets can still enter the queue since it isnt full, and other devices will experience slower network connection, avoiding the global sync problems
+* Weighted random early detection, WRED allows to control priorities. High priority packets wont be dropped
+  * possible to exploit this for targetted DDoS??
