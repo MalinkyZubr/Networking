@@ -698,13 +698,13 @@ extremely important
 
 So what is a VLAN???
 
-what if you want to break up a broadcast domain into several smaller broadcast domains?
-if we od this, we can limit access to different segments of that broadcast domain to improve security
+* what if you want to break up a broadcast domain into several smaller broadcast domains?
+* if we od this, we can limit access to different segments of that broadcast domain to improve security
 lots of unecessary broadcast traffic also reduces network performance
 
 this can all be done with subnets, so where do VLANs come in?
 
-subnets each require their own router interface. Thus, for every subnet, we need an additional connection to the router.
+* subnets each require their own router interface. Thus, for every subnet, we need an additional connection to the router.
 That means that if we try to send a message from one subnet to another, it goes through the network switch, into the router interface, out another interface, and to the desired subnet
 
 but what if we send a broadcast frame? The switch still broadcasts it on all interfaces. A switch is only aware of layer 2 information, and doesnt care about the subnets. The subnets are not seperated at layer 2, the broadcast domain.
@@ -2309,7 +2309,7 @@ Dynamic host configuration protocol
 ### Purpose
 * allows to automatically figure characteristics of network config, such s ip, subnet mask, default gateway, dns server without manual config
 * this is why when we connect to wifi, we dont have to manually set a default gateway
-  * DHCP tells a host what ip, subnet mask, and interface to use when it connects to a nework command
+  * DHCP tells a host what ip, subnet mask, and interface to use when it connects to a nework
 * mostly used for client services
 * routers, servers, and stuff are usually manually configured because they need static IPs, and other things. 
 * In small networks the router is usually the DHCP server, in larger ones its a dedicated machine
@@ -2386,6 +2386,7 @@ and remember what the release does
 ### Router as DHCP Relay Agent
 * enter interface config mode for interface connected to subnet with clients that want DHCP
 * `ip helper-address (DHCP server address)` to say what the dhcp server address is. For this, you need to have a route, either static or dynamic to the dhcp server
+* remember, there is a special field in the DHCP message called CHADDR, client hardware address. This is a representation of the MAC address. This is necessary because if the DHCP request is forwarded on a relay, the source mac becomes the mac of the relay
 
 ### Router as DHCP client
 * from interface config mode
@@ -2921,7 +2922,7 @@ where do syslog messages go?
           * assured forwarding, AF, set of 12 standard values
             * four traffic classes. All packets in one class have same priority. Higher class number have higher priority
             * within a class there are 3 drop precedences
-              * higher DP means more likely to drop packets in congestion
+              * higher DP means more likely to drop packets in congestion, lower QoS
               * anatomy:
               * first 3 bits represent class, 4th and 5th bit represent drop precedence, the final bit is always 0
             * when writing an AF marking, we do AFXY
@@ -2988,4 +2989,622 @@ where do syslog messages go?
 * classification can be used for different classifications
 * but why?
   * what if a customer only bought a 300 mbps connection on a 1 gbit port? They can only transmit data at 300 mbps, way under the specs of the hardware
+
+## Security Concepts
+### Why security?
+* confidentiality
+  * only authorized users can access data
+* Integrity
+  * data should not be tampered with by unauthorized users
+* Availability
+  * the network should be operational for authorized users
+* CIA Triad
+* attackers can threaten all of these
+
+### Keywords
+* vulnerability, any potential weakness which can comrpomise the CIA of a system
+* an exploit uses the vulnerability to gain access to a system
+* a threat is the potential of a vulnerability to be exploited
+* mitigation technique protects against threats
+* no system is ever perfectly secure
+
+### Common Attacks
+* DoS
+  * threaten availability
+  * TCP SYN Flood
+    * exploits the 3 way TCP handshake
+    * in TCP syn flood, the attacker sends many SYNs at once to a target
+    * the target responds, but the attacker never acknowledges
+    * the target waits for the final ack of each connection, and fills up the connection table, so no other clients can connect
+  * much more powerful, DDoS, does the same thing
+    * uses multiple devices in a botnet to execute such DoS attacks all at once
+* Spoofing
+  * use a fake source address, IP or MAC
+  * numerous attacks involve spoofing
+  * DHCP Exhaustion
+    * DHCP exhaustion attack is an example
+    * an attacker uses spoofed mac addresses to flood DHCP discover messages
+    * the DHCP pool becomes full, resulting in a denial of service to other devices, since the mac address changes every time
+  * DHCP Decline attack
+    * spoof a target IP and mac, then send a release message to the router to tell the router you no longer need the IP address
+  * VLAN hopping
+    * DTP exploit that allows the attacker to gain access to other VLANs
+* reflection/amplification
+  * reflection  
+    * The attacker sends traffic to a reflector like a DNS server, and spoofs its owns ource address to be that of a target
+    * the reflector, like a DNS server sends the reply to the target IP address 
+    * if the amount of traffic grows enough, there is a denial of service
+  * amplification
+    * same as reflection, but the amount of traffic sent by the reflector grows exponentially compared to the data the attacker sends
+    * DNS and NTP have this vulnerability
+* man in the middle
+  * an attacker sits between a connection of 2 clients, intercepting and reading packets received from one, and then forwarding them to the next, so it looks as if nothing is happening
+  * ARP spoofing/poisoning
+    * attacker sends an ARP request, telling the target to map the other target IP to their mac address
+    * all messages will then go to the attacker in the lan
+    * attacker could also modify messages before forwarding them
+  * DHCP Poisoning
+    * A 'spurrious' DHCP server, an attacker pretending to be a DHCP server responds to DHCP discover messages from clients before a legitimate DHCP server can
+    * the fake DHCP attacker assigns an IP to the client, then tells the client that the attacker IP is the default gateway
+    * the attacker forwards packets to and from the client and server, but intercepts all
+* reconnaissance
+  * collect publically available information, OSINT
+    * nslookup to find IP of website
+    * lookup.icann.org to find website information
+* Malware
+  * evil programs
+  * viruses
+    * infects other programs to spread, requires a host to move around. 
+  * Worms
+    * same as viruses, but can move around on their own without user interaction
+  * Trojan
+    * harmful software disguised as good software
+  * Rootkit
+    * malware embedding in the kernel of the computer
+* Social Engineering
+  * trick people into giving up secrets
+  * phishing
+    * legit looking email containing link to fraud website which logs data, credentials, and such
+    * spearphishing
+      * targetted phishing attack to certain people
+    * whaling
+      * taargeted at high profile members of an organization
+    * vishing
+      * voice phishing, scam calls
+  * watering hole
+    * compromise a website users like to visit, then steal information from there
+* password related attacks
+  * most systems have passwords
+  * username is usually easy to guess, like an email address
+  * password strenght is relied on for security
+  * ways to get passed passwords:
+    * guessing (I guess)
+    * dictionary attack with common/previously leaked passwords
+    * brute force: test all char permutations, requires very powerful computer
+  * long passwords are the best way to avoid brute forcing
+  * passwords should also be changed regularly
+
+### Multi Factor Authentication
+* what if the password is leaked?
+* usually relies on OAuth industry standard processes
+
+### Digital Certificates
+* prove the identity of the cert holder
+* used for websites to verify legitimacy of the website
+* organizations that want a cert ask for a certificate from a CA, certificate authority
+
+### AAA
+* authentication, authorization, accounting
+* monitoring and control framework
+* authentication:
+  * verify user identity
+  * passwords, usernames
+* authorization:
+  * process of granting permissions
+  * what services can the user access? what cant they access?
+* accounting:
+  * record user's activities on the system, surveillance of user activity
+* most companies use AAA servers which administer these services, running on:
+  * RADIUS protocol: industry standard UDP 1812 1813
+  * TACACS+: Cisco proprietary protocol TCP 49
+
+### Security program elements
+* user awareness programs: make employees aware of threats
+* user training: train users in cybersecurity basics and policies
+* physical access control: lock the stupid doors for the sensitive equipment!!! 
+
+## Port Security
+* port sescurity is a feature of cisco switches
+* allows control over what mac addresses are allowed to enter the switchport
+* if unauthorized source mac address enters the port, the switch does something
+  * by default, the interface enters an err-disabled state 
+* when configuring port security on an interface with the default settings, one mac address is allowed
+  * allowed mac addresses can be configured manually
+  * alternatively, the switch will allow the first mac address that enters the interface
+* you can also increases the maximum number of mac addresses on the port, such as with a pc connected in series with a voip phone to a switch
+* if more than one mac address is allowed, they all dont have to be automatic or manually configured, you can have a combination
+
+### Why?
+* net admins can control what devices have access toa network
+* however, mac spoofing isnt so hard
+* port security's ability to limit the number of mac addresses allowed on an interface is good.
+  * the DHCP starvation attack for instance relied on spoofing thousands of separate mac addresses and sending DHCP requests to the DHCP server. That is impossible with port security
+  * switch mac address tables can only hold so many mac addresses. When they overflow, it cant learn new macs and support new connections
+
+### Basic configuration
+* enter interface config mode `interface (interface)`
+* by default switches are in dynamic auto mode, which deosnt support port security
+  * port security only works on access and trunk, both manually configured static
+* to start security, do `switchport port-security`
+  * default violation mode is shutdown. Unauthorized connections trigger shutdown of interface
+    * to re-enable a port, first disconnect the unauthorized device
+    * then shutdown, and no shutdown the interface
+  * also displays mac address limits
+
+### Err Disable State
+* security isnt the only reason devices enter this state
+* you have hte option to set up automatic re-enabling of interfaces when they go down for select reasons
+* when configured, the port will go back up after 5 minutes
+* to enable the auto recovery, do `errdisable recovery cause (cause)`
+* to change time interval for recovery, do `errdisable recovery interval (time in seconds)`
+* too see cuases, do `show errdisable recovery`
+* this is useless if you dont also disconnect the device that caused the errdisable. Otherwise it just loops
+
+### violation modes
+* determines what to do if unauthorized access is detected on an interface
+* shutdown
+  * shuts down port
+  * generate syslog and SNMP message
+  * violation counter set to 1 as long as interface is disabled
+* restrict
+  * the switch discards traffic from unauthorized mac addresses, but the switch is not disabled
+  * generates syslog and SNMP each time detected
+  * violation counter increase by 1 every unauth frame
+* protect
+  * discard traffic
+  * no messages
+  * silent discard of unauthorized traffic
+
+### More configuration
+* to enable security authorizing a specific address, do 
+  * `switchport port-security mac-address (mac address)`
+* to enable a violation mode, do:
+  * `switchport port-security violation (violation mode)`
+* secure mac addresses, mac addresses managed by the port-security, can be configured to age out.
+  * by default the mac addresses stay alive for 0 mins, forever
+  * the default aging type is 'absolute'
+    * absolute: after mac address is learned, the aging timer starts and the mac is removed upon expiration, even if the switch is still receiving frames
+    * inactivity: same as absolute, but the timer is reset every time a frame is received
+    * static: enables aging for all mac addresses, including those manually configured
+* to configure mac address aging, do
+  * `switchport port-security aging (aging type)`
+
+### Sticky Secure Mac Addresses
+* sticky secure mac address learning enabled by 
+  * `switchport port-security mac-address sticky`
+* when enabled, all dynamically  learned mac addresses will be added to the running config, as if you ran the command
+  * `switchprt port-security mac-address sticky (mac)`
+* these macs never age out. To write them to NVRAM, however, you must do `write memory`
+
+### MAC address table
+* all of these will be added to the mac address table.
+  * if the mac address is sticky, it is assigned the type static.
+  * otherwise, it gets the type dynamic
+
+## DHCP Snooping
+* security service of CISCO devices which helps guard against attacks utilizing DHCP
+
+### What is it?
+* Filter DHCP messages received on untrusted ports
+* only filters DHCP
+* all ports are untrusted by default
+  * usually uplink ports are trusted, and downlink ports remain untrusted
+    * downlink ports are those closest to the end hosts, pointing toward the end hosts
+    * trusted ports, likewise, point away from the end hosts to the network infrastructure
+  * messages received by trusted ports arent inspected
+  * if the message is received on an untrusted port, DHCP snooping inspects the message. The message is dropped if it is determined to be harmful
+
+### DHCP messages
+* when DHCP snooping checks messages, it treats server and client messages differently
+* clients are inspected
+  * discover
+  * request
+  * release: no longer need IP
+  * decline: decline the IP address offer
+* servers are trusted
+  * offer
+  * ack
+  * nak (decline DHCP client request)
+
+### How does it work?
+* if the DHCP message is received on a trusted port, forward it as normal
+* if received on an untrusted port, inspect and act
+  * if it is a DHCP server message, drop it. DHCP servers shoudlnt be on untrusted ports, good sign its someone running a DHCP poisoning attack
+  * if a DHCP client message:
+    * discover/request: if the source mac and DHCP CHADDR fields match. If they match, forward, else, discard
+      * guards against spoofing, sort of, but not really
+    * release/decline: check if the packet source IP address and receiving interface match the DHCP snooping binding table. If match, forward, else drop
+
+### DHCP snooping binding table
+* when a client leases an IP from server, server makes new entry in DHCP snooping binding table
+
+### DHCP snooping config
+* to enable DHCP snooping on switch, `ip dhcp snooping`
+* in addition to globally enabling snooping, also must be enabled on each vlan
+  * `ip dhcp snooping vlan (vlan number)`
+* then usually its good to run `no ip dhcp snooping information option`
+  * what is information option? option 82
+  * one of many DHCP options (check this out)
+  * provides additional info about which DHCP relay agent received client message
+  * DHCP relay agents add option 82 to messages forwarded to remote DHCP server
+  * with DHCP snooping enabled, cisco will automatically add option 82 even if the swithc isnt a relay agent!
+  * untrusted ports also automatically drop option 82 messages, resulting in inconsistent relay information error
+  * this command disables the option 82 adding behavior
+* then from interface config mode, specify your trusted ports with `ip dhcp snooping trust`
+* remember, the interfaces facing the clients should be untrusted!
+* to see the binding table, do `show ip dhcp snooping binding`
+  * displays lots of information about connected clients
+
+### Rate Limiting
+* snooping also can limit the quantity of DHCP messages entering an interface
+* if the threshold is exceeded, the port goes into err-disabled mode
+* to configure, enter interface config mode
+  * `ip dhcp snooping limit rate (number)`
+  * the interface will only allow (number) DHCP requests per second
+* to re-enable the switchport, we can enable errdisable recovery
+  * `errdisable recovery cause dhcp-rate-limit`
+* good for protecting against DHCP exhaustion attacks
+
+## Dynamic ARP Inspection, DAI
+* security feature of switches which inspects ARP messages
+* like dhcp snooping, but for ARP
+
+### Gratuitous ARP
+* ARP reply sent without receiving an ARP request
+* sent to broadcast mac address
+* allows other devices to learn the mac address of the sending device without making an ARP request
+* some devices automatically send GARP messages when an interface is enabled, IP/mac address is changed
+
+### DAI
+* used to filter ARP messages on untrusted ports
+* like with DHCP snooping, downlinks (closest to end host) should be untrusted. Uplinks (closest to network infrastructure) should be trusted
+* like DHCP, if the DAI determines that the ARP packet is not allowed, it drops it 
+
+### How it works
+* inspects the sender mac and IP fields of all received ARP messages on untrusted ports, then checks there is a matching DHCP snooping binding table entry, and or ARP ACLs
+* ARP ACLs can be manually configured to map IP addresses, MAC addresses for DAI to check. Good for non-dhcp devices
+* also supports ARP rate limiting
+  * remember, DHCP snooping and DAI still use device CPU, so even if messages are dropped, if the switch is overwhelmed with either such message, ti will break the CPU
+
+### Config
+* to enable DAI on a vlan, do `ip arp inspection vlan (vlan number)`
+* confiugre the ports you want to be trusted with. All are untrusted by default
+  * `ip arp inspection trust`
+* DAI rate limiting is enabled by default on untrusted ports, at 15 packets per interval
+* you can also specify burst interval, this specifies the interval over which packet quantities are measured. This is 1 second by default
+
+### DAI Optional checks
+* check destination mac address, ip address, and source mac
+  * destination mac: checks mac address against the target mac address in the arp message. INconsistency=drop. dst-mac
+  * ip validation: unexpected or inconsistent IP check, dropped if there is invalid IP address, like broadcast address. ip
+  * source mac validation: check if source mac of ethernet header is the same as sender mac value of the arp packet. src-mac
+  * to configure these optional checks: `ip arp inspection validate (validation types you want, all in one command)`
+    * if you run the command multiple times, the checker does not append to the list of checkers. Instead, it overwrites
+* to see the DAI logs, do `show ip arp inspection`
+
+## LAN Architectures
+* there are standard best practices for network design, but no universal answer usually
+
+### Common Terminology
+* Star topology
+  * several devices all connect to one central device, making a star shape
+* full mesh
+  * each device is connected to each other device
+* parital mesh
+  * some devices are connected, but not all
+
+### Two Tier Campus LAN design
+* a lan or multiple lans in a building or close area
+* two hierarchical layers
+  * access layer
+    * end hosts connect here. 
+    * QoS marked traffic
+    * security services
+    * PoE switchports enabled for phones and such
+  * distribution layer (aggregation layer)
+    * network equipment aggregating connections from access layer switches
+    * conects to internet and WAN
+* also called 'collapsed core', because
+*  it is a simplified version of 3 tier
+*  when your network grows however, tier 2 becomes inefficient
+   *  since at tier 2, distribution layer switches are in partial or full mesh, the connection # increase for each additional D-Layer switch increases rapidly
+   *  to scale large lan networks, add a core layer
+   *  if there are more than 3 distribution layers, you should have a core layer
+
+### Three tier lan design
+* adds a core layer to the architecture
+  * connects distribution layers in large LANs
+  * the focus is speed, fast transport
+  * no security on this layer to avoid excess CPU use
+  * All layer 3 connections, NO STP!!!
+  * should maintain connectivity even if devices fail
+
+### Spine leaf architecture
+* application centric architecture, ACI
+* common datacenter architecture
+* datacenters are dedicated area for running large computer systems like servers and network devices
+* previously, datacenters used 3 tier architecture when data was north south, client to network
+* datacenters need east west communication however, host to host
+* virtual servers, cloud, and HPC require greater inter-host communication when large datacenters operate like clusters
+* also called Clos architecture
+
+* there are 2 layers, leaf and spine
+  * every leaf switch is connected to every spine switch
+  * every spine switch is connected to eveery leaf switch
+  * spine switches dont connect to other spine switches
+  * end hosts only connect to leaf switches
+* the path traffic takes is random for load balancing
+* each server is separated by the same number of hops, so there is consistent delay between servers
+* very extensible 
+
+### SOHO networks
+* small office/home office
+* no complex needs, all networking functions provided by the home router, or wireless router
+
+* the router is usually:
+  * a router
+  * switch
+  * firewall
+  * wireless access point
+  * modem
+
+## WAN Architectures
+* Wide Area Network
+* network that extends over a large geographic area
+* connect geographically separate LANs
+* while the network nfractructure for LANs focuses on switches, WANS focus on routers and routing
+
+### Leased Lines
+* A dedicated physical connection between two sites.
+* private connection
+* usually managed by an ISP, who provides the actual cable lines from location to location
+* there are either serial cables (with PPP or HDLC encapsulation) 
+* optic fiber cables are becoming more common for WAN leased lines as well
+  * these are becoming more popular, as they are faster and longer range
+
+### MPLS
+* multi protocol label switching
+* similar to internet, MPLS is shared customer infrastructure that allow enterprise WAN
+* label switching allows vpns to be created over the MPLS infrastructure by use of labels
+  * this allows different data to be identified to different customers, so it doesnt get mixed up and goes to the right place
+
+#### MPLS Infrastructure
+* CE router: customer edge router
+  * customer infrastructure connected to ISP
+* PE router: provider edge router
+  * ISP infrastructure directly connected to customer
+* P router: provider core router
+  * internal infrastructure of ISP network infrastructure
+* when the PE router receive frames from CE routers, they add a label to the frame, identifying where it came from
+* these labels replace the IP for determining the destination of the frames
+* CEs do not use the MPLS, only PE/P routers do
+
+##### Layer 3 MPLS VPN
+* when using a layer 3 MPLS VPN, the CE and PE routers connect using a routing protocol like OSPF to share route information
+* MPLS uses labels for forwarding instead of IPs
+
+##### Layer 2 MPLS VPN
+* At layer 2, CE routers directly connect without connecting to PE and P routers. all CE routers in the same WAN are directly connected
+  * the wan interfaces are also in the same subnet
+* if routing protocol used, routers peer with each other directly
+* basically, the ISP operates like a big switch
+
+### MPLS hardware
+* many technologies are used for these mpls connect9on
+  * wireless 4g 5g 
+  * ethernet
+  * cable tv
+  * serial
+* whichever they use, all can communicate if part of the same MPLS VPN
+
+### WAN over internet
+* sending important data over the internet unprotected is a bad idea
+* to establish secure connection, the company uses VPN tunnels from site to site. This encrypts data being transmitted
+* this allows secure communications over the internet
+
+### Connecting to the internet
+* private leased lines
+* mpls vpns
+* although these are private, they can access the public network
+* CATV and DSL, used by homes, can also be used in enterprise situations
+* fiberoptics are taking over also
+
+### DSL
+* digital subscriber line
+* internet connectivity via phone lines, sharing phone lines already in homes
+* DSL modem is required to convert data to phone line compatible data
+  * this might be a separate device, or part of the home router
+
+### Cable
+* Similar to DSL in operation
+* uses cable television lines for internet access
+* requries modem for data format conversion
+
+### Redundant Internet Connections
+* for big enterprises having backups is a good idea
+* one connection to one ISP is single homes
+  * no redundancy
+* two connections to 1 isp is dual homes
+  * better
+* one connection to 2 isps multihomes
+  * good if one ISP goes down
+* two connections to 2 ISPs dual multihomed
+  * best redundancy
+
+### Topologies
+* one common topology is hub and spoke. Same thing as star in LANS. 
+  * allows a central source to govern traffic flow
+  * all traffic must go through the hub
+
+### Internet VPNs
+* when using the internet for WAN, no built in security
+* VPN provide good security over shared internet connection
+
+#### Site 2 Site VPN
+* used IPsec
+* VPN between two devices for connecting devices over internet
+* in site to site vpn, tunnel created by encapsulating original IP packet with VPN header and new IP header
+* this original packet is encrypted before being encapsulated (when using ipsec)
+
+1. unencrypted data is encrypted alongside a session key at source router
+2. new VPN and IP headers added.
+3. send the data over internet
+4. destination router decrypts data
+
+##### Limitations
+* no broadcast or multicast traffic, since IPSec (site 2 site vpns) support only unicast
+  * OSPF and such cant be used
+  * solved by GRE over IPsec
+* also, configuring a mesh of tunnels is hard
+  * solved by DMVPN
+
+#### GRE over IPsec
+* generic routing encapsulation creates tunnels, with no encryption
+* can encapsulate many layer 3 protocols along with broadcast and multicast
+* flexibility + security = GRE over IPsec
+  * GRE packet created much like IPsec, with GRE header and IP header
+  * then the data is encrypted, and it receives another header, IPsec and another ip header
+
+#### DMVPN
+* removes need for full mesh IPsec tunnels
+* allows routers to denyamically route tunnels
+1. configure IPsec tunnels to a hub site
+2. hub router gives each router information on how to forma n IPsec tunnel with the other routers
+* config simplicity of spoke to spoke architecture with the interconnectivity of full mesh
+
+### Remote Access VPNs
+* while site to site VPNs are used to make point to point connection between two sites, remote VPNs allow any end device to access internal resources security
+* relies on TLS, transport alyer security
+* provides the security for HTTPS
+* formerly SSL
+* VPN client software is installed on end devices for employees working from home
+* such ned devices for tunnels to company routers and firewalls, accessing resources
+
+### Comparison
+* site to site use IPsec while remote VPNs use TLS
+* site to site provide service to many devices between connected networks. Remote access VPNs provide service to one end device
+* site to site VPNs are for more permanent connections. Remote access VPNs are usually for on demand access  
 * 
+
+## Virtualization and Cloud
+### Server Hardware
+* Dell, EMC, HP, IBM
+* how do servers work?
+  * before virtualization, each server had one OS running
+  * on top of the OS is the app layer, which runs jobs
+
+### Virtualization
+* with virtualization, multiple OS' can run on a single hardware unit
+* thus multiple services, which would otherwise be delegated to separate hardware can operate separately in VMs
+* these are all managed by the hypervisor, or VMM (virtual machine monitor)
+* 2 types of hypervisor
+  * type 1 hypervisor: runs directly on top of the hardware, bare metal, native hypervisors
+    * efficient, since it runs on hardware and doesnt take as many resources
+  * type 2 hypervisor: runs on top of a host OS
+    * vmware on a laptop
+    * the hypervisor has to communicate with the hardware through the host OS
+    * the hypervisor acts as an app, running guest OS'
+    * hosted hypervisor
+    * not used in datacenters
+
+### Why virtualization?
+* partitioning: multiple OSs on one physical machine, dividing physical resources
+  * no hardware underuse
+* isolation: there is separation of concerns, so problems on one service dont bring all services down
+* encapsulation: save the state of VM to files, copy and paste VM images
+* hardware independent: no matter what vm you have, as long as the hypervisor works on your hardware, the VM will work
+* much easier to set up a new vm than buy a new physical server and set it up
+
+### VM networking
+* VMs are connected to one another via a virtual switch
+* this is usually provided by the hypervisor
+* just like  aregular switch, vSwitch interfaces can operate in access or trunk port mode, and use vlans to spearate the VMs
+* interfaces on the virtual switch connect to physical network interface cards, NICs to connect with the outside network
+* to facilitate this, a local NAT is also set up
+
+### Cloud Services
+* traditionally all network infrastructure was stored on premises
+* alternatively, datacenters could rent out physical space and infrastructure to companies. Companies must still do all the switches, but servers and such are held by the datacenter
+* cloud provides an alternative to both
+
+### Cloud Computing
+* SP 800-145 by NIST says it is:
+  * convenient on demand access to shared pool of configurable computing resources which can be quickly released with low effort.
+  * depends on 5 essential characteristcs, 3 service models, 4 deployment models
+
+#### 5 essential characteristics of cloud computing
+* on demand self service
+  * a consumer can provision computing capabilities as needed automatically without human interaction will all service providers.
+  * the user can interact with the cloud resources using a web portal, through which payment and config is handled
+* broad network access
+  * capabilities are available over standard network connections and can be interfaced with any device that connects with such networks
+* resource pooling
+  * resources are pooled to serve multiple consumers, a pool from which resources are dynamically assigned to customers as needed
+  * location independence, no user control over location of actual resouorces. 
+  * resources: storage, processing, memory, network bandwidth
+* rapid elasticity:
+  * customers can quickly expand or scale back from the resource pool with little difficulty or limit
+* measured service
+  * cloud systems optimize resoure use by measuring resource use.
+  * the provider and customer have access to usage analytics. Both user and provider know how much is being used and how much it costs
+
+#### 3 service models
+* all is provided on a service model
+* SaaS: software a as a service
+  * use provider's applications running on cloud infrastructure
+  * microsoft office 365
+  * provider is in control of everything. They are only providing you an application that runs on the cloud
+* PaaS: platform as a service
+  * the user can deploy their own applications onto a cloud hosted platform
+  * AWS lambda, google app engine
+* IaaS: Infrastructure as a service
+  * the provider only provides the hardware
+  * the user can deploy and run software, like OSs and applications
+  * storage is also user controlled
+  * Amazon EC2, google compute engine
+  * most customer control
+
+#### 4 deployment modes of cloud
+* private cloud
+  * infrastructure provisioned for exclusive use by single organization
+  * large enterprises
+  * cloud private, still maybe owned by third party
+  * AWS provides infrastructure for DoD
+  * on or off premises
+* community cloud
+  * cloud infrastructure is provisioned for a sepcific community made up of groups with similar goals or missions
+  * least common deployment
+  * infrastructure reserved for use by only specific organizations 
+* public cloud
+  * provisioned for use by the general public
+  * may be owned managed and operated by central organization
+  * Azure, AWS, etc
+* hybrid cloud
+  * composite of different cloud infrastructures, community + public
+  * any combination of the 3 other types
+  * private cloud that can make use of public cloud resources when necessary
+
+### Benefits of cloud
+* cost: Much lower capital expenses than buying hardware
+  * replaced by operating expenses
+* scalability: very easy to scale globally, and spread service globally
+* agility: easy to modify resource consumption
+* productivity: no need to setup or install physical systems
+* reliability: backups in the cloud are very easy to perform. Data can be mirrored at multiple sites
+
+Most companies use a combination of on premises equipment and cloud systems
+
+### How does enterprise connect to the cloud?
+* private WAN 
+* internet (cheapest, least secure)
+* IPsec VPN tunnel
