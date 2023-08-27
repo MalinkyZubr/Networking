@@ -3990,7 +3990,7 @@ all these are 802.11x auth methods
 * EAP: extensible authentication protocol
   * framework on which other auth is based
   * defines auth functions used by the below
-  * uses 802.1x, port based access control
+  * uses 802.11x, port based access control
     * limit network access for clients until authenticate
     * 3 entities
       * supplicant: device requesting connection
@@ -4039,6 +4039,7 @@ all these are 802.11x auth methods
   * used in WPA1
 * CCMP
   * counter CBC mac protocol
+  * MAC is message authentication code
   * more secure
   * used with WPA2
   * must be supported by hardware
@@ -4064,7 +4065,7 @@ all these are 802.11x auth methods
     * PSK: pre shared keys
       * when connected to home wifi, if you enter the password you are authenticated
       * the PSk isnt sent over network, but instead used in a 4 way handshake workflow for encryption key generation
-    * Enterprise mode: 802.1X with auth server (radius server) 
+    * Enterprise mode: 802.1X with auth server (radius server, remote authentication dial in user service) 
       * all EAP methods supported
 * after wep proven vulnerable
   * WPA:
@@ -4083,3 +4084,156 @@ all these are 802.11x auth methods
         * protects four way handshake
       * forward secrecy: prevents data being decrypted after transmitted over the air
 * basically WPA standards package security methods into simpler sets
+
+## Wireless Config
+* oh boy, this will be a long one...
+* we will use GUI for wireless config!
+
+### Network topology
+* WLC connects to a switch using static etherchannel, referred to as LAG
+
+### Configuration
+#### Switch
+* create VLANs
+* configure the ports connecting to APs as access ports
+
+#### router
+* DHCP
+* subnets
+* configure as NTP server
+
+#### WLC
+* first must connect to console port to configure GUI
+* just let the wizard run the course
+* virtual gateway IP: IP used when communicating with wireless clients
+* multicast IP address for forwadding traffic through APs
+* mobility/group name is for identifying WLC groups, so they work together
+* nnote: when entering a country code, you must select a coutnry code under the jurisdiction of the regulatory domain of the AP
+* make sure the management VLAN for the wlc is configured on the entwork to connect to and configure it with the GUI
+
+##### WLC GUI Config
+* when connected to the management vlan on the network, go to the IP address of the WLC in the browser
+* login with configured password
+* controller tab
+  * interfaces
+    * see the logical WLC interfaces, connecting to the APs
+    * wlc ports are physical ports
+      * service port: out of band management, to keep management traffic out of the data traffic
+        * must connect to switch access port
+        * recovery, management, etc
+      * distriution system port
+        * standard network port that connects to the DS, wired network
+        * switch trunk port
+      * Console port
+      * redundancy port
+        * connect for HA, high availability pair
+    * wlc interfaces are logical ports
+      * management interface: for maangement traffic. Telnet, ssh, http/s, radius, etc etc. These have CAPWAP tunnels
+      * redundancy managmeent interface: with an HA connection between two WLC, one WLC is on standby, the other is active. This interface allows for management of the standby wlc
+      * virtual interface: used for relaying DHCP requests, web auth to clients
+      * service port interface: out of band management bound to service port
+      * dynamic interface: map WLAN to VLAN.
+        * traffic to internal WLAN sent to wired network from WLC internal dynamic interface 
+* to add dynamic interfaces:
+* controller tab
+  * click 'new'
+    * internal WLAN, map to vlan number. Enter name also.
+      * enter all the network information, DHCP address, subnet, etc
+      * apply
+
+* configure WLANs
+* wlan tab
+  * for SOHO, use PSK security (layer 2 sec tab)
+    * must enter the PSK key manually
+  * in layer 3 security, you can configure:
+    * web authentication: for open authentication
+    * passthrough: no authentication except accepting ToS
+  * map wlans to internal dynamic interface
+  * also AAA servers, for RADIUS setup
+  * QoS
+    * control what quality is delegated to the wireless traffic
+    * QoS setting: best effort by default
+    * platinum: voice
+    * gold: video
+    * bronze: background
+
+* wireless tab has configuration management for the APs
+* management: summary of management settings
+
+## intro to network automation
+### network automation
+* the traditional model of network management is diluted by automation
+* traditionally, individual devices managed one by one
+  * typos and mistakes are a problem in big networks if you have to configure a bunch of devices manually
+  * time consuming, inefficient
+* automation facilitates scalability, easy network wide changes, troubleshooting
+* network wide policy compliance, software updates
+* fewer man hours per task
+* automation methods:
+  * python scripts
+  * SDN (software defined networking)
+  * puppet
+  * ansible
+
+### The 3 planes of the newtork
+* traditionally every device has its own plane. In SDN, planes are centralized
+* data/forwarding
+  * all user data transmitted from one client to another is in the data plane
+  * routing, packet examination, forwarding, ACLs, and NAT all exist in this plane
+  * relies on ASIC instead of CPU for higher speed for forwarding
+  * Also uses stuff like TCAM (ternary content addressable memory) for high speed memory
+  * data plane work on the devices is much closer to the hardware!
+* control
+  * how does the router know where to send things?
+  * arp table, mac table, STP, routing table
+  * operations to build these tables
+  * controls what data plane does
+  * Overhead operations
+    * OSPF doesnt send and receive packets, but informs the data plane where routing options are available
+* management
+  * overhead work
+  * doesnt directly affect normal traffic
+  * manage devices
+  * SSH, telnet, syslog, SNMP, NTP
+
+### SDN
+* software defined networking
+* centralizes the networking control plane to a single application, the controller
+* SDA (software defined architecture) controller based networking
+* traditional planes are distributed
+  * each router runs OSPF, finds the best routes, shares information
+  * SDN centralizes these things, like route calculations
+* controller can interface with network devices using APIs
+
+* in an SDN architecture, the controller runs OSPF, and relates data to the routers
+* much more efficient than idividual communication
+* this coordination is done with the `southbound` interface, a software interface
+
+* some architectures centralize only some of the control plane
+
+#### Southbound interface
+* sbi used for communications between network devices and the controller
+* usually an API
+* examples:
+  * openflow
+  * cisco opflex
+  * cisco onepk
+  * netconf 
+
+#### Northbound Interface
+* using SBI, controller communicates with devices
+  * learns about them, and about the network as a whole
+* northbound interface allows the devices to interact with the controller and use its resources
+* the nortbound interface is usually controlled by an app, and REST api
+  * Representation State Transfer
+  * communicates via json and xml
+
+### Traditional vs SDN
+* in traditional net architecture:
+  * python scripts still can be used to run commands on many devices
+  * parse through show commands to make things easier to read
+* SDN:
+  * central control
+  * central analytics
+  * easier to use
+  * 3rd party applications using APIs
