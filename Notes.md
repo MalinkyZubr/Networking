@@ -3608,3 +3608,478 @@ Most companies use a combination of on premises equipment and cloud systems
 * private WAN 
 * internet (cheapest, least secure)
 * IPsec VPN tunnel
+
+## Containers
+* similar to VMs
+
+### What is a container?
+* application containing all of the dependencies and binaries for the app to run
+* multiple apps can run on one container, but usually one container per app
+* containers are light weight, good for single application virtualization
+  * VMs run an os in each VM, containers dont
+* containers run on the container engine
+  * container engine is run on a host os, usually linux
+* we also have container orchestators, software for automating container management and deployment
+  * for microservice apps that might have thousands of containers working together
+
+### VM vs containers
+* containers boot up fast, and recover fast from problems
+* vms take a lot of space, containers dont
+* vms use more cpu and ram than containers
+* containers are even more portable, smaller, faster.
+* VMs are isolated. Issue on one OS wont affect other VM
+  * all containers run on one OS
+  * this provides security benefits for VMs
+
+## VRF
+* virtual routing and forwarding
+* allows division of one physical router to multiple virtual routers
+* like VLANs, for routers
+
+### What is it?
+* divide a single router to multiple virtual routers
+* separation of concerns between mutliple groups of clients, using one hardware unit
+* traffic cant be forwarded between VRFs
+  * with exception of VRF leaking which allows some traffic to be forwarded out of mismatched ports
+* this is because each virtual router has its own routing table
+
+### Why?
+* used to facilitate MPLS, remember how service providers allow many customers to share infrastructure? 
+* we are using VRF lite though, no mpls
+  * each customer connects to their own virtual router
+  * VRF is a major cost saver
+* without VRF, two interfaces on the same router cannot be in the same subnet
+  * VRF effectively allows for local IP reuse
+
+### Configuration
+1. `ip vrf (vrf name)` to create vrf
+2. `show ip vrf` lists vrfs
+3. next, assign interfaces
+   1. enter interface config mode
+   2. `ip vrf forwarding (vrf name)`
+4. configure subnets on the interfaces
+5. to see a vrf routing table, `show ip route vrf (vrf name)`
+
+* each vrf has interfaces. Interfaces in the same VRF can forward data out of one another
+* additionally, not all interfaces have to be in a vrf
+
+## Wireless Fundamentals 
+### Radio Frequency
+* assigned frequency ranges
+* for wireless networks, the frequency range is called wifi
+  * "wireless lan"
+
+### Wireless Networks
+* Focus is on WiFi in the CCNA
+* the standards defined in IEEE 802.11
+* Wi-Fi is a trademark of the WiFi alliance
+  * tests equipment to 802.11 standards compliance to certify they are interoperable with other wifi devices
+
+#### Issues
+* wireless networks have some issues
+* all devices within range receive all frames. There is no such thing as a directed wireless signal, wireless lan antennas are omnidirectional
+* this is the same problem as ethernet hubs
+  * collisions of data
+* privacy of data is alsoa  greater concern since all networks are broadcast
+* encryption on a wireless network is essential since anyone sitting near the network can pick up its signals
+* as for data collision, CSMA/CA (carrier sense multiple access with collision avoidance) allows half duplex communication.
+  * avoid collisions before they occur
+  * wait for other devices to stop transmitting before it transmits data itself
+
+* wireless communication are regulated by international and national bodies
+  * different countries demarcate different frequencies differently
+
+* with wireless connections, not only wire lenght matters
+  * signal range and integrity
+  * absorption, reflection, refraction, diffraction, and scattering (electromagnetism, if you know you know) interfere with wireless signals
+  * multiple devices using the same channels cause interference
+
+### Radio Frequency
+* to send wireless signals, sender applies alternating current to an antenna
+  * this creates electromagnetic field which propogates as a wave
+* wireless is limited to a few small frequency bands
+  * UHF and SHF bands
+  * 2.4gHz band
+    * 2.4-2.4835 ghz
+  * 5gHz band
+    * 5.150 to 5.825 ghz
+  * in future, wifi 6 will have a range in the 6ghz range
+* each band is divided up into several channels
+  * devices are configured to transmit and receive traffic on one or more of these channels
+
+### Channels
+* the 2.4 ghz band is divided into many channels, each with a 22MHz range
+* some channels overlap, so we must choose what channels to use for different access points
+* for SOHO wireless networks this isnt a problem, there is only one AP (access point)
+* in larger WLANs (wireless lans), adjacent APs using the same channel will interfere
+  * this reduces performance
+* in the 2.4 ghz band its recommended to use the 1,6, and 11 channels. These dont overlap at all. Remember this
+* as for the 5GHz band, channels do not overlap at all!!
+* in addition, you must take into account the placement of your APs. See the image for wireless arrangements
+
+### Standards
+* much like wired connections, different versions of the wireless standards have different data throughput
+
+1. 802.11: 2.4 ghz, 2mbps
+2. 802.11b: 2.4 ghz, 11mbps
+3. 802.11a: 5 ghz, 54 mbps
+4. 802.11g: 2.4 ghz, 54 mbps
+5. 802.11n: 2.4/5 ghz, 600 mbps 'Wifi 4'
+6. 802.11ac: 5 ghz, 6.93 gbps, 'WiFi 5'
+7. 802.11ax: 2.4/5/6 ghz, 25 gbps, 'wifi 6
+
+* note that the data rates are theoretical, not absolute
+* some devides support one, some or all of these standards
+
+### Service Sets
+* 802.11 enumerates different service sets, groups of wireless network devices
+  * independent
+  * infrastructure
+  * or mesh
+* all in the same service set share the same SSID, service set identifier
+  * a name which identifies the service set
+  * not necessarily unique, but better to be unique
+  * this is the name of a wireless network
+
+#### IBSS
+* independent basic service set: wireless network in which two or more wireless devices connect without using an access pont
+* 'ad hoc' network
+* airdrop
+* not scalable, suitable only for quick file transfers
+
+#### BSS
+* basic service set
+* infrastructure in which clients connect via an AP, not directly to one another
+* the AP serves as a wireless switch
+* the BSSID, basic service set id identifies the AP. The mac address of the AP radio
+* other APs can use the same SSID but not the same BSSID
+* wireless devices request to 'associate' with the BSS
+  * the wireless devices associated with the BSS are stations/clients
+  * BSA (basic service area) is the area in which the signal is usable
+* traffic MUST flow through the AP, not go direct
+
+### ESS
+* extended service set
+* when one BSS isnt enough, and there must be wireless signal over a large physical area
+* in this architecture, several BSSs operate in a network, all connected by wire to a switch
+  * Each BSS uses the same SSID
+  * each BSS has a unique BSSID
+  * each BSS used a different channel
+* the goal of the BSS is to use several APs to extend range, while making it seem like you are on the same network all the time
+* this is how on large campuses you can go anywhere, and still connect to the same wifi
+* roaming is when the client/station can move between these APs seemlessly
+  * to support seemless transition, BSAs should overlap by 10-15%
+
+### MBSS
+* mesh basic service set
+* difficult to run an ethernet connection using every AP
+* each AP uses two radios, one which connects to stations/clients, and one to form the mesh connection to other APs wirelessly
+* at least one switch is connected by wire to a router, the RAP, route access point
+* other routers connected in the mesh are MAPs, mesh access points
+
+### Distribution system
+* ost wireless services arent standalone network, but are a way for clients to connect to the wired infrastructure without actually using a cable
+* this wired network is the DS, distribition system
+* each BSS or ESS is mapped to a VLAN in the wired network
+* a single AP can also provide multiple unique SSID WLANs. Think an employee wifi and a guest wifi on the same AP.
+  * basically, WVLANs
+  * each WLAN mapped to a VLAN, connected to wired network by trunk
+* each WVLAN also uses a unique BSSID, incrementing the last digit of the physical BSSID by one
+
+### AP Operational modes
+* APs operate in modes
+* an AP repeater will extendthe range of another AP
+  * in the case of a single radio AP, both the repeater connection and the repeater's BSS operate on the same channel, reducing data througput
+    * every additional level of repetitiion, throughput reduces by 50%
+  * all this is avoided with 2 radio APs though
+* workgroup bridge
+  * allows a connection for wire only devices to the wireless network
+  * a device with a wired connection to a WGB can connect to the wireless AP, even if it has no wireless NIC
+  * uWGB
+    * universal WGB, allows one device to connect to wireless network
+  * WGB
+    * cisco proprietary version allowing multiple wired clients to bridge to wireless AP using one bridge
+* Outdoor Bridge
+  * long range wifi connections using directed antenna dishes, focusing signal strength
+  * allows long distance connection in one direction
+
+## Wireless Architectures
+### 802.11 Messages
+* WLANs communication differs from standard ethernet 
+* 802.11 frames are significantly more complex than ethernet and IP headers
+  * many more fields
+
+#### Frame fields
+* FC frame control: information such as message type and subtype
+* duration/id: identifier showing
+  * time (microseconds) the channel will dedicate to sending the frame
+  * ID for association (connection)
+* addresses
+  * up to 4 in one frame
+  * which ones are present depends on the frame type
+  * DA: destionation address
+  * SA: source address, original sender
+  * RA: immediate recipient of the frame (the AP probably)
+  * TA: immediate sender of the frame (again, AP probably)
+* sequence control
+  * re-assemble fragments and eliminate duplicate frames
+* QoS control: prioritize some traffic
+* HT: High throughput operations
+  * last field of the header
+* after this is the frame body
+* finally, the trailer is the FCS, frame check sequence, find errors in the frame
+  
+### Association process
+* access point bridge traffic between wireless stations and other devices
+* for station to send traffic through AP, it must associate with that AP
+* 3 AP connection states
+  * not authenticated & associated
+  * authenticated, not associated
+  * authenticated and associated
+* station must be auth and ass. to the AP to send traffic through it
+
+the process:
+1. station/client sends the probe request to find out what APs are available
+   1. active scan: send request and wait for response
+   2. passive scan: listen to AP beacon messages
+2. AP sends probe response to say its available
+3. station sends password to the AP
+4. AP authenticates it if the password is correct
+5. station sends association request
+6. AP sends association response
+
+now the station can send traffic through the AP
+
+### Message types 802.11
+* management: manage the BSS
+  * beacons
+  * probes
+  * authentication
+  * association
+* control: control acccess to radio. assist with deliviery of management and data
+  * RTS (request to send)
+  * CTS (clear to send)
+  * ACK
+* data: actual data packets
+
+### AP deployments
+#### Autonomous APs
+* self contained, not relying on WLC (wireless lan controller)
+* configured individually by cable, cli, http, or gui
+* this is fine for small networks, but not efficient in large networks
+* for this kind of config, you must confiugre an IP to connect to for management
+* the RF parameters are also to be configured. Power, channel
+* security policies are per AP
+* QoS are per AP
+* no central monitoring or management
+* config:
+  * each AP should have a trunk port connection
+  * data traffic has a direct path to wired networks or to other wireless clients
+* why else is this bad?
+  * large broadcast domains, since each AP has its own VLAN and these extend across the entire network
+  * spanning tree will disable links (avoid STP as much as possible)
+  * managing vlans is hard
+
+#### Lightweight APs
+* function of AP can be somewhat delegated to the WLC, wireless lan controller
+* Lightweight APs handle real time operations, transmission, cryptography, and beacons/probes
+* other functions carried by WLC
+  * RF management
+  * security/QoS management
+  * client auth
+  * client association management
+* split MAC architecture, functions split between AP and WLC
+* WLC is used for central configuration, so all AP can be configured at once. Very nice!!!
+* can be located in the same VLAN and subnet or a different one
+* WLC and APs authenticate to one another using digital certs, so an attacker cant maliciously attach their own AP in the network to mess with traffic
+* this relationship relies on the CAPWAP protocol
+  * Control and Provisioning of Wirelesss Access Points
+  * based on LWAPP, lightweight access poiint protocol
+* for communications, two tunnels are formed between the AP and WLC
+  * Control tunnel: UDP 5246. Config the APs, control ops, all traffic encrypted
+  * Data Tunnel: UDP 5247. All traffic from wireless clients is sent through this tunnel to the WLC by wire. 
+    * Until it goes through the WLC by the tunnel, it cannot go to the wired network!
+    * encapsiulated with new headers, like vpn tunnelling
+    * this traffic isnt encrypted by default, but can be configured to be with DTLS, datagram transport layer security
+* since all traffic is tunneled directly to the WLC with CAPWAP, the switchports are in access mode, not trunk mode
+  * this is because instead of each SSID on the AP being mapped to a VLAN, the vlan mapping happens on the wlc instead
+* the wlc on the other hand must be connected to the wire network by a trunk link
+* lightweight APs have different modes
+  * local: the AP offers a BSS for clients to associate with (default)
+  * flexconnect: AP also offers BSS. Allows the AP switch wireless and wired traffic on the network if the connectivity to the WLC is lost. Good redundancy
+  * sniffer: the ap doesnt offer a BSS. Dedicated to capturing 802.11 to send to another device for analysis
+  * monitor: the AP doesnt do BSS. Dedicated to receiving frames to detect rogue devices. If rogue is found, the monitor tells the AP to send de-auth messages to get rid of the rogue
+  * rogue detector: AP doesnt use radio, listens to traffic on the wired network and gets a list of potentially rogue clients and AP mac addresses. By listening to ARP onthe network it can detect rogues
+  * SE connect: AP dedicated to analyzing RF spectrum. HElps find sources of interference
+  * bridge/mesh: like outdoor bridge mode, configures lightweight AP as a bdirge between sites over long distance. Mesh can be made between access points
+  * flex plus bridge: adds flex connect functions to bridge connect
+    * allow forwarding of traffic in a bridge mesh architecture even if the WLC dies
+
+#### Cloud Based
+* middle ground between autonomous and split mac/lightweight
+* centrally managed in the cloud
+* cisco meraki is popular cloud b ased wifi solution
+* meraki dashboard can be used to configure APs, montior network, generate reports
+* regular data isnt sent to the cloud. Sent directly to the network like with atuonomous APs
+* only management information is operated in the cloud
+
+### WLC deployment models
+* four main deployment methods
+  * unified: WLC is a hardware device at a central network location
+    * supports 6000 APs
+    * good for large enterprise, or large campus
+    * if you need more APS, just double the WLCs
+  * cloud based: wlc is a VM running on server on a private cloud in a data center
+    * not the same as the cloud based AP architecture
+    * the WLC is on the cloud
+    * supports about 3000 aps
+  * embedded: WLC is integrated within a switch
+    * good for about 200 APs. 
+    * smaller networks
+  * mobility express: WLC is integrated within an AP
+    * about 100 APs
+    * suitable for small branch office, or something
+
+## Wireless Security
+802.11x
+* security is important everywhere
+* most essential in wireeless networks though. Any device in range of the signal can receive the signal
+* in wired networks, traffic is usually only encrypted when sent over untrusted netwokrs like the internet
+* in wireless, very important to encryp ttraffic sent between wirless clients and the AP
+* Authentication
+  * all clients must be authenticated to associate with AP 
+    * verify identity of user and device
+    * only trusted users and devices on the network!
+    * separate ssid for guests can be provided
+  * clients should also authenticate the AP to avoid associating with maliciious APs
+  * passwords, usernames, certificates
+* encryption
+  * traffic sent between clients and APs should be encrypted so it can only be read by client and AP
+  * clients must use same encryption protocol on network, so they can communicate
+  * each device has its own key
+    * also group key used so AP can send traffic to all clients
+    * all clients keep this key
+* integrity
+  * message must not be modified by third party in transit!
+  * message integrity check, MIC is added to messages to help protect integrity
+  * how?
+    1. sender calculates a mic for the receiver, and attaches this to the message
+    2. receiver receives and calculates a new MIC using the same protocol. If the MICs dont match, the receiver drops the message
+  * the mic identifies tampering, its like a checksum to software!
+
+### Authentication methods
+all these are 802.11x auth methods
+* Open Authentication
+  * client sends auth request and AP accepts it. No credentials
+  * not secure, because no security exists
+  * after authentication and association, the user might have to authenticate via other methods to access the network
+  * this is guest wifi usually
+* WEP: Wired equivalent privacy
+  * wired equivalent privacy provide aut and encryption of wireless traffic
+  * uses RC4 encryption
+  * requires shared key between clients
+  * WEP kes can be 40 or 104 bits in length
+  * keys combined with 24 bit IV (initialization vector) to bring total length to 64 or 128 bits
+  * longer key is usually more secure
+  * WEP is not secure, not modern!!
+  * authentication side:
+    * AP sends a challenge phrase, series of bits
+    * client encrypts the challenge phrase and sends it back
+    * AP compares client encrypted challenge with AP encrypted challenge
+    * this isjust testing that the client knows the AP key
+* EAP: extensible authentication protocol
+  * framework on which other auth is based
+  * defines auth functions used by the below
+  * uses 802.1x, port based access control
+    * limit network access for clients until authenticate
+    * 3 entities
+      * supplicant: device requesting connection
+      * authenticator: device providing access to network
+      * AS (auth server) receives client credentials and permits/denies them (radius server of sorts)
+      * steps:
+        1. open auth to associate with authenticator. NO access to network except to interface with the authentication server
+        2. authentication server decides if the supplicant can access network
+        3. the authenticator is a middleman, this is the AP usually
+* LEAP: lightweight EAP
+  * clients must provide username and password for auth
+  * challenge phrase sent by both the client and authentication server
+    * basically bidirectional version of WEP with username and password auth
+  * dynamic wep keys: wep keys change frequently and automatically
+  * this is also vulnerable nowadays though
+* EAP-FAST: EAP flexible authentication via secure tunneling
+  * 3 phases
+    1.  PAC (protected access credential) created and sent from server to client
+        1.  shared key
+    2. establish secure TLS tunnel between client and authentication server
+    3. client is authed in the TLS tunnel
+* PEAP: protected EAP
+  * tls tunnel like EAP fast
+  * instead of PAC, the server has a digital cert
+  * cert also used to establish the tunnel
+  * client must still authenticate after tunnel formation
+    * MS-CHAP, microsoft challeng handshake auth protocol
+* EAP-TLS: EAP TLS
+  * requires a certificate from the server and client
+  * most secure auth method
+  * hardest to implement since all clients need a cert
+  * TLS is still used to exchange encryption information, but it is not for authentication
+
+### Encryption
+* TKIP
+  * temporal key integrity protocol
+  * solve wep vulnerabilities using hardware designed specifically for wep
+  * temporary solution
+  * adds security features
+    * MIC added 
+    * key mixing for unique wep key every frame
+    * initialization vector doubled in size to make bruting difficult
+    * MIC includes source mac
+    * timestamp added to MIC to prevent replay attacks <- research this
+    * TKIP sequence number to track sent frames, protect against replay
+  * used in WPA1
+* CCMP
+  * counter CBC mac protocol
+  * more secure
+  * used with WPA2
+  * must be supported by hardware
+  * encryption:
+    * AES counter mode
+      * most secure symmetric encryption method
+    * CBC-MAC cipher block chaining message authentication code
+      * advanced sorta MIC
+* GCMP
+  * Galois counter mode protocol
+  * more secure and efficient
+  * higher data throughput than previous
+  * used in wpa3
+  * AES counter mode
+  * GMAC:
+    * superior MIC to CBC-MAC
+
+### WPA
+* wifi alliance developed WPA, wifi protected access to standardize all these confusing security measures
+* for certification under WPA, it must be tested in wifi alliance testing labs
+* support 2 auth modes
+  * personal mode
+    * PSK: pre shared keys
+      * when connected to home wifi, if you enter the password you are authenticated
+      * the PSk isnt sent over network, but instead used in a 4 way handshake workflow for encryption key generation
+    * Enterprise mode: 802.1X with auth server (radius server) 
+      * all EAP methods supported
+* after wep proven vulnerable
+  * WPA:
+    * TKIP
+    * 802.11x auth
+  * WPA2
+    * CCMP
+    * 802.1x or PSK
+  * WPA3
+    * GCMP
+    * 802.1X auth or PSK
+    * other security features
+      * PMF: protected management frames
+        * no management forging for WLC management
+      * SAE: simultaneous authentication of equals
+        * protects four way handshake
+      * forward secrecy: prevents data being decrypted after transmitted over the air
+* basically WPA standards package security methods into simpler sets
