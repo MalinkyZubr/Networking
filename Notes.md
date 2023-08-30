@@ -4237,3 +4237,322 @@ all these are 802.11x auth methods
   * central analytics
   * easier to use
   * 3rd party applications using APIs
+
+## data serialization
+* data serialization allows a standard data format
+* allows data at the application layer to be put in a format it can be packaged in byte form to be sent over a network
+
+### what is serialization?
+* standard format for data to be stored or sent
+* data communicated between applications both can understand
+  * java and python applications can communicate
+* json is basically python lists and dicts
+* REST APIs are basically entirely based on json messages
+
+### JSON
+* javascript object notation
+  * file format/data interchange format
+  * can be used to store data AND send data
+* rfc8259
+* originally for javascript, but now language agnostic
+* whitespace insignificant
+* 4 primitive datatypes
+  * string 
+    * text surrounded by double quotes
+  * number 
+    * an integer, or float
+  * boolean
+    * true or false
+  * null
+    * null value, nothing
+* 2 structured datatypes
+  * object
+    * basically a dict
+    * surrounded by curly brackets
+    * key must be string
+  * array
+    * just a list of values, no keys
+
+### XML
+* extensible markup language
+* markup language?
+  * format text for HTML
+* repurposed for serialization
+* less human readable
+* whitespace insignificant
+* often used in REST
+* `<key>value</key>`
+* list headers are:
+  * `<entry>`
+  * `</entry>`
+
+### YAML
+* yet another markup language
+* yaml aint markup language
+* used by ansible
+* most human readable
+* whitespace significant
+* yaml files start with ---
+* `-` indicates a list
+* keys and values represented as key:value
+
+## REST APIs
+* application layer communication
+* northbound interface
+
+### CRUD
+* create read update and delete
+* key API operations and HTTP verbs
+* creative operations:
+  * create variables and set values
+* read
+  * get the value of variables
+* update
+  * change variable values after creation
+* delete
+  * delete variables
+
+### HTTP
+* HTTP methods are classified into these crud operations
+* the HTTP verb determines what the receiver will do with your message
+* applications usually use HTTP, for its simplicity and wide usage
+* create:
+  * POST
+* read:
+  * GET
+* update:
+  * PUT, PATCH
+* delete:
+  * DELETE
+
+### HTTP request
+* when a client sends a request to server, it includes:
+  * http verb
+  * URI
+      * what resource is the client trying to access?
+* additional headers
+  * research yourself
+* http request
+  1. IP header
+  2. TCP header
+  3. verb
+  4. URI
+  5. additional headers
+  6. data
+* REST APIs use HTTP (mostly)
+
+### HTTP Response
+* after server receives client message, server returns response
+* status code indicating success or failure of request
+* 3 digits
+  1. class of the response
+     1. 1xx informational, continuing to process
+        1. 102, received response and processing
+     2. 2xx successful, successfully accepted
+        1. 200 okay, successful request
+        2. 201 created, success, new resource created
+     3. 3xx redirection, further action must be taken to complete request
+        1. 301 moved permanently (server changed)
+     4. 4xx client error, cannot fulfill request
+        1. 403 unauthorized
+        2. 404 not found
+     5. 5xx valid client request, server cannot fulfill though
+        1. 500 internal server error
+  
+### REST APIs
+* representational state transfer
+* set of rules on how API must operate
+* constraints:
+  1. uniform interface
+  2. client server
+     1. client uses API calls to access server resources
+     2. separation means both client and server can evolve independently
+     3. when client app changes or server app changes, interface will not break
+  3. stateless
+     1. exchanges are stateless
+        1. tcp is stateful, long lives connection
+        2. udp is stateless, no connection
+        3. rest APIs use TCP, stateful, HTTP isnt stateful
+     2. each API exchange is a separate event
+     3. independent of all previous requests
+     4. servers dont store previous requests
+     5. every individual must request must have authentication 
+  4. cacheable or non cacheable
+     1. must support data caching
+     2. store data for future use
+     3. quicker response times, reduces server load
+     4. all resources neednt be cacheable, but those that are must be identified as such
+  5. layered
+  6. code on demand (optional)
+
+### Cisco DEVNET
+* developer program for IT people write applications for cisco APIs
+* teaching resource for development
+* there is devnet cert as well
+* devnet provides the DNA center, an always allive server, to test API requests
+* we can send HTTP requests via postman
+* to use:
+  1. generate token with post request
+     1. specify username and password
+     2. if successful, response 200
+     3. copy the token
+  2. retrieve device inventory with get request
+     1. add the token to http header
+     2. see all available devices
+
+* scheme of the URI identifies the protocol used
+
+## Software defined networking
+* more specifically, SD (software defined) access
+* centralize control plane into the controller application
+* network devices share information with controller which calculates routes. Routers dont use OSPF anymore to talk to each other!
+* controller interacts programmatically using APIs with the rest of the network
+
+### SDN architecture
+1. Application layer
+   1. apps tell SDN controller what to do
+2. control layer
+   1. receives and processes instructions
+3. infrastructure layer
+   1. actual devices in the network
+
+### sd-access
+* cisco solution for automating large area LANs
+  * ACI (application centric infrastructure) solution for automating data centers (spine leaf)
+  * SDWAN is sdn for wan
+* cisco DNA
+  * controller at the center of SD access
+  * intermediary between the applications, and the network
+* underlay: underlying network devices providing IP connectivity with IS-IS
+  * the switches
+* overlay: virtual network on top of physical underlay
+  * sdaccess uses VXLan to build tunnels (virtual extensible lan)
+  * all data in virtual network is sent using these tunnels
+* the fabric is combination of overlay/underlay, all the network as a whole
+
+### underlay
+* the underlay provides the infrastructure for VXLAN tunnels
+* different roles for switches in sdaccess
+  * edge nodes: connect to hosts
+  * border nodes: connect to exterior devices
+  * control nodes: uses LISP (locator id separation protocol) to perform control functions
+* you can add sdaccess to existing network if supported by hardware.
+* this is a brownfield deployment
+* ideally youll do a greenfield (new) deployment
+  * all switches should be layer 3
+  * routed using ISIS protocol
+    * STP and FHRP no longer needed
+    * routers are the default gateways
+    * every device is routed to one another
+  * all links are routed, no STP
+
+### overlay
+* LISP provides control plane
+  * mappings of endpoint ids (EIDs) to RLOCs (routing locators)
+  * EIDs identify the hosts connected to end switches
+  * RLOCs identify edge switch to reach the end host with
+  * DNS like mapping
+* trustsec (CTS) policy control, QoS, security
+* VXLAN 
+  * tunnel access for SDACCESS
+  * data plane of SD-Access
+  * basically, a pc can ask a switch how to reach another device
+  * then a vxlan tunnel is created between the two devices
+
+### CISCO DNA
+* 2 roles
+  * SDN controller
+  * network manager (when not using SDACCESS)
+* DNA center is installed on UCS server
+* rest API
+* SBI supports netconf, restconf, telnet, ssh, snmp
+* dna center enables IBN, intent based networking
+  * allow engineers to communicate network intent for behavior, then DNA center will handle the heavy monotonous lifting behind the scenes
+  * ACLs can have thousands of entries
+    * easy to forget what entries do
+    * DNA center allows user to specify policy intent. X cant interact with Y, then the DNA configures it for you
+    * the engineer can write comments for policies
+* manage network operations, DHCP, DNS, etc
+* show inventory of network devices
+  * by default, messages are managed
+  * you can also see compliancy with network policies
+    * if a device isnt updated with new software, it will be listed as non-compliant
+
+### DNA center vs traditional network
+* Devices centrally managed and monotored by DNA center
+* administrator communicates intended network behavior
+* configs are centrally managed along with polkicies
+* software versions centrally manages
+* network deployments much easier
+* lower human error
+
+## Ansible, puppet, chef
+* can be useful in any network, but they are just tools
+* use the right tool for the job!!
+
+### configuration management, why?
+* configuration drift:
+  * individual changes over time cause device config to deviate from policies
+  * standard configuration allows more seemless operations between devices
+  * records often arent kept of individual changes
+  * configuration management tools help avoid this
+  * with no management tool, configuration files should be stored in a filesystem and compared against a standard set of templates
+    * this doesnt guarentee safety though
+
+### config provisioning
+* help apply config changes to all devices in the network
+* no more individual configuration!
+* we might create a json file storing a configuration for a device
+* then send this file to all devices we want
+
+### managers
+* ansible puppet and chef (that order of popularitgy) were originally developed for large scale VM management
+* they now work for distributing configuraitons for networks as well
+* check device configurations for compliance with policies
+* also supports network automation using scripts
+
+### Ansible
+* config management tool owned by redhat
+* written in python
+* agentless
+  * doesnt require special software to host it
+* uses SSH to connect to devices and run its course
+  * this means its very versatile. Most popular as a result
+* push model: the ansible server connects to the devices and push configurations to devices
+* Components
+  * playbooks: ansible uses playbooks, yaml files for automating tasks. Overview logic and actions
+    * YAML
+  * inventory: list devices managed by ansible and characteristics of each device
+  * templates: device config files
+    * jinja2 format YAML
+  * variables
+    * list variables and values, substituted to templates to complete configs. YAML
+
+* in short, the playbook draws from inventory, templates, and variables to run scripts to interface with network devices
+
+### Puppet
+* configuration tool written in ruby
+* agent based
+  * specific software must be installed to work
+  * not all cisco devices support puppet agent
+* TCP 8140
+* can be run agentless. Proxy agent runs on external hosts, and proxy uses agent to SSH to drvices
+* puppet server = puppet master
+* pull model: clients connect to server and pull configurations from it
+* instead of yaml, uses proprietary language
+* text files required:
+  * manifest: defines configurations for devices
+  * templates: generate manifests
+
+### Chef
+* agent based
+* ruby
+* not all cisco devices support chef agent
+* pull model
+* TCP 10002 to send configs
+* files use DSL domain specific language based on ruby
+* files:
+  * resources: ingredients in a recipe, configs managed by chef
+  * recipes: outline logic and actions of tasks performed
+  * cookbooks: sets of related recipes
+  * runlist: ordered list of recipes run to bring devices to standard with the policy
