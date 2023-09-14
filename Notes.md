@@ -407,6 +407,7 @@ Class E is reserved for experimentation
 ### Network and broadcast addresses
 * network address
   * if the host portion of the address is all 0's it is the network address, the identifier for the network itself
+    * when configuring  astatic route, this is the destination IP
   * network address is the first address of the entwork, but the first usable address is 255.255.255.1, in the case of a /24 network
 * broadcast address
   * if the host portion of the address is all 1's (in binary) it is the broadcast address
@@ -422,7 +423,7 @@ add 1 to the network address and you get the first usable address. Subtract 1 fr
 ### configuring IP on cisco devices
 #### show all ip addresses
 * from priveleged exec mode:
-* `show ip interface brief``
+* `show ip interface brief`
 * displays the ip address for each interface. If unassigned, you can assign it manually
 * method indicates how the host was assigned an ip address
 * status is the layer 1 status of the interface. Is there a cable connected?. Administratively down means it was disabled with the shutdown command. Cisco router interfaces are admin down by default
@@ -447,7 +448,7 @@ note you can manually set ip addresses for pc's in packet tracer it he config me
 ## Switch Interfaces
 ### interfacing
 1. enable priveleged exec
-2. show ip interface brief
+2. `show ip interface brief`
 3. Switches do not have shutdown command applied by default. When you connect a device, they will be up up by default (status and protocol up)
 4. Switches do not have assigned IPs because they are layer 2 devices. 
 5. down down just means no connection. Routers are down by default, switches are not
@@ -465,19 +466,19 @@ note you can manually set ip addresses for pc's in packet tracer it he config me
 autonegotiation usually works, but good idea to know manual configuration
 
 ### configuring speed and duplex
-* enter interface configuration `interface (ethernet type) (interface number)
-* speed (# speed based on network capability / auto for auto selection) to change speed
-* duplex (auto/full/half) to change duplex status
-* description ## (description) ##
+* enter interface configuration `interface (ethernet type) (interface number)`
+* `speed (# speed based on network capability / auto for auto selection)` to change speed
+* `duplex (auto/full/half)` to change duplex status
+* `description ## (description) ##`
 * any value that is autonegotiated will have a-(value)
 * all of these commands also work on routers
 
 however, it is a security risk to config each individually, so you can configure all of them in groups with range interfacing
 
-* interface range (interface speed) (interface start index) - (interface end index)
+* `interface range (interface speed) (interface start index) - (interface end index)`
 * any configuration commands made now will apply to all selected interfaces
 * if you want to specify several different ranges, you just do:
-* interface range (interface speed) (interface start index) - (interface end index), (interface speed) (interface start index) - (interface end index)
+* `interface range (interface speed) (interface start index) - (interface end index), (interface speed) (interface start index) - (interface end index)`
 
 ### Full and half duplex
 #### Half duplex
@@ -506,7 +507,7 @@ Can send or receive one at a time. No waiting time
 5. Just use autonegotiation
 
 ### Interface errors
-* show interfaces (speed and interface)
+* `show interfaces (speed and interface)`
 * shows some statistics at the botton of the data output. 
 * You can see total packets received, and total bytes
 * runts: smaller than minimum ethernet frame size, 64 bytes
@@ -546,6 +547,7 @@ a host will ask these questions:
 1. is the destination ip address in the same LAN as me?
 2. if it is, you can forward directly to the client
 3. if it is not in the same LAN, forward to the default gateway, the device the host forwards data destined for another network to. Routers are usually the gateway, through the interface IP
+   1. default gateway is denoted by 0.0.0.0/0. It is usually mapped to another IP address in the network, the router, which is discovered using DHCP, mostly 
 4. now the router has the packet, and it will compare the destination IP to the routing table. Each router has a routing table that stores a list of destinations and routes to those destinations. 
 5. if it is already in the routing table, it will send the packet via an interface directly to the router, and via any hops in between the source and destination networks. 
 6. The source router forwards the packet to the next router in the route. That router follows the same process as the first router, checks its IP table, and forwards to the next hop in the route. 
@@ -574,12 +576,13 @@ The ip address configured on a router interface will appear as a local route, /3
 
 ##### so how do we configure the static route?
 * local and connected routes are automatic. 
-* to configure a route, `ip route (destination-address) (mask) (next hop)`. I give this packet to you, you deal with the route.
-* ip route 0.0.0.0 0.0.0.0 (router interface IP address)
+* to configure a route, `ip route (destination-address) (mask) (next hop)`. I give this packet to you, you deal with the route. Usually the destination address is the network address, for instance, 192.168.1.0, where subnet mask is 255.255.255.0
+* `ip route 0.0.0.0 0.0.0.0 (router interface IP address)` to configure default gateway. Represented by * in routing table
 * the next hop will figure out how to get the packet where it needs to go
 * ROUTERS WILL DROP PACKETS WITH UNKNOWN DESTINATIONS. THEY WILL NEVER FLOOD
 * unless we configure our routes (or do dynamic routing, later), we cannot send packets to unknown destinations, eg dstinations not in the routing table
 * How do we get around this? This command: `ip route (destination IP) (mask) (exit-interface)`. Instead of next hop we specify exit interface. where should we send packets as a route of last resort? to whatever is at the end of the interface. Gateway of last resort is not added however, because this is for specifric networks. But what does this mean? it is technically a direct connection to the destination IP. It is basically saying, "I will give this packet to whatever is connected on this interface, and they will route it where it needs to go". And so, when the packet gets to the router on the connected interface, its own routing will carry out the rest of the work.
+  * appears as direct connection in routing table
 * `via` usually refers to interface. Get to network IP via interface IP
 
 there might be a problem however, one way reachability. Source can send packets, but without more static routing, the destination cannot send a reply. 
@@ -642,7 +645,7 @@ the remaining addresses in the address block are available to be used in other s
 * probably you will never use these. What if you cant to create a static route to a single host however?
 * a /32 mask can be used to identify a static host IP address
 
-### Chart of CIDR notation
+### Chart of CIDR notation subnet masks
 Dotted Decimal          CIDR Notation   Subnets     num hosts     num borrowed bits
 255.255.255.128         /25             1           126           1
 255.255.255.192         /26             4           62            2
@@ -658,6 +661,8 @@ we will also look at subnetting for class b and a addresses
 number of subnets = 2^x
 x = number of borrowed bits, bits of the last octet assigned to the subnet address
 
+remember when configuring subnets, the lowest address in the network is the network address. The highest address is the broadcast address. THese are not usable as addresses
+
 ### Subnetting trick:
 
 the last octet of a /26 address can be represented as such:
@@ -670,7 +675,7 @@ Thus the network addresses of the subnets on this octet are 0, 64, 128, and 192
 
 the same process can be used for class A and B networks
 
-### VSLM
+### VLSM
 variable length subnet masks
 
 so far we have used fixed length subnet masks. This means that all subnets use the same prefix length
@@ -730,14 +735,17 @@ switches do not forward traffic directly between hosts in different vlans
 
 ### VLAN configuration
 remember, vlans are configured by interface
+the 5 default cisco vlans are 1, 1002, 1003, 1004, 1005
+vlan 0 and 4095 are reserved, not possible to use!
 
 process:
+to see vlan configs, do `show vlan`
 1. show vlan brief, shows vlans and their interfaces
-2. interface range g1/0,g2/0(example) to enter configuration to configure several interfaces at once
-3. then run command switchport mode access to set the interface as an access port. This means that it belongs to a single vlan, and connects to end hosts. This is as opposed to a trunk port, which carries multiple vlans. Good to explicitly specify port type
-4. then run switchport access vlan (vlan number). if the select vlan doesnt exzist, it will create the vlan
+2. `interface range g1/0,g2/0(example)` to enter configuration to configure several interfaces at once
+3. then run command `switchport mode access` to set the interface as an access port. This means that it belongs to a single vlan, and connects to end hosts. This is as opposed to a trunk port, which carries multiple vlans. Good to explicitly specify port type
+4. then run `switchport access vlan (vlan number)`. if the select vlan doesnt exzist, it will create the vlan
 5. You can also change the default name of a vlan
-6. vlan (vlan number) accesses a vlan. You can then do name (name)
+6. `vlan (vlan number)` accesses a vlan. You can then do `name (name)`. will create vlan if the vlan number doesnt exist
 
 remember, there are 5 default vlans in each switch that cant be deleted
 
@@ -781,33 +789,33 @@ you can use trunk ports to operate several vlans on one interface
 
 ### configuration
 1. enter interface mode
-2. switchport mode trunk
+2. `switchport mode trunk`
 3. if you get a trunk encapsulation error, you must first set encapsulation to 802.1Q to manually change encapsulation type
-4. switchport trunk encapsulation dot1q, to set 802.1Q
-5. switchport mode trunk (to set the mode to trunk)
-6. show interfaces trunk to see trunk interfaces that are trunked
-7. switchport trunk allowed vlan 10,30 (tells the switch what vlans to trunk)
-8. switchport trunk allowed vlan add 20 (add a vlan to the list of allowed trunk vlans)
-9. switchport trunk allowed vlan all
-10. switchport trunk allowed vlan except 10 (all vlans except this one)
-11. switchport trunk allowed vlan none (no vlans allowed)
+4. `switchport trunk encapsulation dot1q`, to set 802.1Q
+5. `switchport mode trunk` (to set the mode to trunk)
+6. `show interfaces trunk` to see trunk interfaces that are trunked
+7. `switchport trunk allowed vlan 10,30` (tells the switch what vlans to trunk)
+   `switchport trunk allowed vlan add 20` (add a vlan to the list of allowed trunk vlans)
+8. `switchport trunk allowed vlan all` to allow all vlans
+9.  `switchport trunk allowed vlan except 10` (all vlans except this one)
+11. `switchport trunk allowed vlan none` (no vlans allowed)
 12. for security purposes it is best to change the native vlan to an unused vlan. This must match between switches
-13. switchport trunk native vlan 1001
-14. remember, to make a vlan a trunk, you must create it first
+13. `switchport trunk native vlan 1001`
+14. remember, to make a vlan a native vlan, you must create it first
 
 ### Router on a stick ROAS
 * what is this? A new method of inter-vlan routing
 * only one interface connected to the network router for all vlans
 * one physical interface to function as multiple. WE are basically making sub interfaces
 * first, enable interface with no shutdown
-* interface g0/0.(vlan number)
-* encapsulation dot1q (vlan number)
-* ip address (sub-net sub-interface address) (netmask)
+* `interface g0/0.(vlan number)`
+* `encapsulation dot1q (vlan number)`
+* `ip address (sub-net sub-interface address) (netmask)`
 * remember, this needs trunk port on the connected switch, which trunks all vlans
 
 ### Using native vlan on a router
 #### 2 methods
-1. encapsulation dot1q (vlan-id) native, tells the router this is a native vlan, assume untagged frames belong to native vlan. Then assign ip address to the subinterface
+1. `encapsulation dot1q (vlan-id) native`, tells the router this is a native vlan, assume untagged frames belong to native vlan. Then assign ip address to the subinterface
 2. dont use a subinterface, just use the physical interface for the native vlan
 
 ### Multilayer switch
@@ -823,24 +831,25 @@ you can use trunk ports to operate several vlans on one interface
 
 ### Configuring multilayer switch
 #### Router side
-* do show run to show sub interfaces, and then do show ip interface brief
-* get rid of all router subinterfaces using no interface g0/0.x
-* then do default interface (interface) to specify default routing interface
+* `do show run` to show sub interfaces, and then `do show ip interface brief`
+* get rid of all router subinterfaces using `no interface (interface).(subinterface)`
+* then do `default interface (interface)` to specify default routing interface
 * then enter interface configuration mode, and set the ip for the p2p connectio between the multilayer switch and router. The subnet mask should be 255.255.255.252
+* multilayer switches do not work with ROAS
 #### Switch side
 * enbable default interface to the router using default interface (interface connected to router)
 * enable ip routing using `ip routing` which allows to build IP table. without this intervlan routing wont work
 * enter selected interface
 * then in the interface, run `no switchport`, so that the port becomes a layer 3 routed port
 * configure the ip address as you would on any router to correspond with the p2p connection
-* then on the switch, set the default route, ip route 0.0.0.0 0.0.0.0 (router ip)
-* thyen do show interfaces status, in order to check the interface works
+* then on the switch, set the default route, `ip route 0.0.0.0 0.0.0.0 (router ip)`
+* thyen do `show interfaces status`, in order to check the interface works
 
 ### SVI config
 * on the switch
-* interface vlan (vlan number)
-* assign ip address to the interface like normal, ip adddress x.x.x.x subnetmask
-* then run no shutdown to enable the interface
+* `interface vlan (vlan number)`
+* assign ip address to the vlan like normal, `ip adddress x.x.x.x subnetmask`
+* then run `no shutdown` to enable the interface
 #### conditions to work
 * vlan must be created first, it must exist on switch. Switch doesnt automatically create vlan when you make an svi for it
 * the switch must have at least one access port in the vlan in an up up state and or one trunk port that allows the vlan that is in an up up state
@@ -858,22 +867,22 @@ you can use trunk ports to operate several vlans on one interface
 * DTP is enabled by default on all cisco switch interfaces
 * so far we have been using mnaual switchport configuration
 * however, for security, manual configuration is recommended, since DTP can be exploited by attackers
-* to enable dtp, do switchport mode dynamic auto/desireable when in interface config mode
+* to enable dtp, do `switchport mode dynamic auto/desireable` when in interface config mode
 * In dynamic desireable mode will actively try to form a trunk with other cisco switches. It will form a trunk if connected to another switchport when it is in trunk mode, or dynamic desireable/auto mode. This is DTP negotiation. It will do its best to form a trunk, unless the other switch interface is in access mode, in which case it will autonegotiate to access
-* show interfaces (interface) switchport shows the settings for a selected interface switchport
+* `show interfaces (interface) switchport` shows the settings for a selected interface switchport
 * in dynamic auyto mode, it will not actively try to form a trunk with other switches. However, it will form a trunk if the connected switch port is in trunk mode, or is seeking actively to form a trunk connectiuon. If it encounters another auto mode, it will form an access connection.
 * if there is a mode mismatch, the traffic will nto flow
 * dtp will not trunk with a router or pc. Trunks for ROAS must be manually configured
-* to disable autonegotiation, you can say switchport nonegotiate
+* to disable autonegotiation, you can say `switchport nonegotiate`
 * remember, manual configuration is always better for this!
 
 * another feature of DTP is negotiation of encapsulation type. THis is enabled by default
-* to set autonegotiation for encapsulation, run switchport trunk encapsulation negotiate
+* to set autonegotiation for encapsulation, run `switchport trunk encapsulation negotiate`
 * DTP frames are sent in vlan1 when using isl, or in native vlan when using 802.1q
 * if both cisco switches suppoort ISL, isl is preferred, so manual configuration is better
-* do this with switchport trunk encapsulation dot1q
+* do this with `switchport trunk encapsulation dot1q`
 
-### VTPe
+### VTP
 * VTP allows configuration of VLANs on a central VTP server switch, whereafter other switches, VTP clients will synchronize their VLAN datrabase to the server
 * designed for large networks with vlans to reduce burden of manual configuration
 * not recommended to use, rarely used
@@ -890,19 +899,19 @@ you can use trunk ports to operate several vlans on one interface
 ### How does this work?
 * show vtp status to show vtp information. by default switches run vtp version 1.
 * If we want to synchronize switches in VTP, we must put them all under same vtp domain name
-* to change vtp domain name, do vtp domain cisco
+* to change vtp domain name, do `vtp domain (name)`
 * if vtp switch with null domain receives advertisement, it automatically joins that domain
 * if a swith receives a vtp advertisement in the same vtp domain witha higher revision number, it will update its vlan database to match
 * danger of VTP: If you connect an old switch with a higher revision number to your network and the vtp domain name mathes, all switches in the domain will sync their vlan databases to that switch, and destroy everything
 
 ### VTP Transparent mode
 * does not participate in the vtp domain, and does not sync to the database
-* maintains its own vlan database in nvram it can add, modify, delete vlans but they wont be advertised omnother switches
+* maintains its own vlan database in nvram it can add, modify, delete vlans but they wont be advertised on other switches
 * will forward VTP advertisements to other VTP switches, if its in the same domain
 
 ### VTP version configuration
 * to change vtp version, use vtp version command
-* vtp version (1-3)
+* `vtp version (1-3)`
 * vtp1 v vtpv2. only major difference is that v2 has support for token ring vlans, otherwise there is no reason to use v2
 * token ring is an old technology
 * v3 has quite a few new features, but not that important
@@ -950,6 +959,7 @@ Spanning tree allows network redundancy, a layer 2 protocol
 * switches send outthe hello BPDUS to learn of other switches
 
 ### BPDUs
+* bridge protocol data units
 * switches use the one field in the STP BPDU, bridge ID to elect a root bridge. The switch with the lowest bridge id becomes root bridge
 * all ports on the root bridge are put in a forwarding state, and other switches on the topology must have a path to reach the root bridge
 * traditionally, this takes 2 fields, bridge priority and source mac address
@@ -959,10 +969,10 @@ Spanning tree allows network redundancy, a layer 2 protocol
 * the default rbidge priority is the sum of the vlan ID and the bridge priority. Thus if a switch is in vlan 1, its actual bridge value is 32769. 
 * because the last 4 bits comprise the bridge priority, and the extended system id is everything up to 2048, you must increase the total bridge priority by a value of 4096 every increment if you want to change the priority without changing vlan
 * valid bridge priority can be between 0 and 61440, at intervals of 4096
-* the LOWEST bridge id is the root bridge
+* the **LOWEST** bridge id is the root bridge
 
 ### Root switch
-* the root switch with the highest bridge priority will have all ports forwarding
+* the root switch with the lowest bridge priority will have all ports forwarding
 * all root ports are designated ports
 * when a switch is powered on, it assumes it is root bridge.
 * It will only give up that position if it receives a superior BPDU, lower bridge ID
@@ -987,9 +997,9 @@ Spanning tree allows network redundancy, a layer 2 protocol
 * when you have an STP path that involves intermediate connections through other switches to get to the root bridge, you add up the sum of root connections to get total cost
 
 ### STP commands 
-* show spanning-tree, show vlan information and vlans
-* show spanning-tree vlan (vlan number). Root id shows data about the root, bridge id shows information about the selected bridge
-* show spanning-tree detail, more details
+* `show spanning-tree`, show vlan information and vlans
+* `show spanning-tree vlan (vlan number)`. Root id shows data about the root, bridge id shows information about the selected bridge
+* `show spanning-tree detail`, more details
 
 ### STP Port states
 * blocking: stable. nn designated ports in this state
@@ -1059,26 +1069,27 @@ Spanning tree allows network redundancy, a layer 2 protocol
   * when first connected, they need to do the listening and learning states
   * no risk of loops with end hosts, so why go through the entire process?
   * allows to bypass listening and learning. Must be enabled only on ports connected to end hosts. If enabled on port connection it will cause layer 2 loop
-  * to enable portfast, enter the interface on the switch, and do spanning-tree portfast. This will only work if the port is not in trunking mode
+  * to enable portfast, enter the interface on the switch, and do `spanning-tree portfast`. This will only work if the port is not in trunking mode
   * portfast can cause loops if network cabling is changed
   * risk to using portfast, but there is an additional method we can use to prevent this
 
 * BPDU Guard
   * if an interface with guard enabled receives a bpdu from a switch, the interface will shut down to prevent a loop from forming
-  * to enable, enter interface, then do, spanning-tree bpduguard enable
-  * to enable bpduguard by default on portfast, from config mode, do, spanning-tree portfast bpduguard default
-  * to enable a port disabled by bpduguard, just do shutdown, then no shutdown to reset the interface.
+  * to enable, enter interface, then do, `spanning-tree bpduguard enable`
+  * to enable bpduguard by default on portfast, from config mode, do, `spanning-tree portfast bpduguard default`
+  * to enable a port disabled by bpduguard, just do `shutdown`, then `no shutdown` to reset the interface.
   * even if it receives a superior bpdu, the port is disabled
+  * this basically protects against loop from forming if portfast enabled port connects to another switch
 
 * loop guard
   * even if the inhterface stopes receiving bpdus, it will not start forwarding, THe interface will be disabled
 
 ### Spanning tree mode
-* to change spanning tree mode, do spanning-tree mode (mst/pvst/rapid-pvst)
+* to change spanning tree mode, do `spanning-tree mode (mst/pvst/rapid-pvst)`
 
 ### Configure root priority
 * to make an arbitrary bridge the root bridge
-  * spanning-tree vlan (num) root primary/secondary
+  * `spanning-tree vlan (num) root primary/secondary`
   * this makes the selected switch have lowest priority 
 * we can also have a backup root bridge
 * priority configurations only apply in the vlan on which they are configured. This allows spanning tree load balancing
@@ -1086,11 +1097,11 @@ Spanning tree allows network redundancy, a layer 2 protocol
 
 ### interface configuration
 * to configure cost of an interface, enter the interface conig mode
-* spanning-tree vlan (num) cost (cost) to change cost manually
-* spanning-tree vlan (num) port-priority (priority num) to change port priority
+* `spanning-tree vlan (num) cost (cost)` to change cost manually
+* `spanning-tree vlan (num) port-priority (priority num)` to change port priority
 
 ## Rapid Spanning Tree Protocol
-Old spanning tree can take up to 50 seconds to chagne topology. Responds in a few seconds. Default on most devices. CCNA only has RSTP
+Old spanning tree can take up to 50 seconds to chagne topology. RSTP Responds in a few seconds. Default on most devices. CCNA only has RSTP
 
 ### Standard vs Cisco
 * Standard IEEE
@@ -1197,12 +1208,12 @@ non designated was split into alternate and backup port role in RSTP
 * in this calculation, source/destination mac, or both addresses
 
 ### configuration
-* show etherchannel load-balance
+* `show etherchannel load-balance`
   * this will show which method it uses to determine which physical interface is used to transmit data. 
   * src-dst-ip means it determines this using source and destination ip addresses
   * traffic that flows from one source to one destination will always flow on the same interface
   * what if there is no ip packet or ip address? use mac address
-* port-channel load-balance src-dst-mac
+* `Port-channel load-balance src-dst-mac`
   * change the method to source and destnation mac address. more stable
 * 3 methods of etherchannel configuration
   * PAgP (port aggregation protocol)
@@ -1214,28 +1225,58 @@ non designated was split into alternate and backup port role in RSTP
     * this is on exam, but all methods should be known
   * static etherchannel
     * static configuration of etherchannel
+    * etherchannel isnt dynamically formed
     * usually avoided, because you want to dynamically manipulate the etherchannel. If one interface fails, then the etherchannel will stop working when statically specified
 
 * with etherchannel, only 8 interfaces max can be used
 * to configure etherchannel:
-* interface range g0/0,g0/3
-  * channel-group (group num) mode (mode)
+* `interface range g0/0,g0/3`
+  * `channel-group (group num) mode (mode)`
   * mode can be desirable or auto
-    * auto + auto = nothing
-    * desireable + anything = etherchannel 
+    * mode determines how the etherchannel protocol is negotiated
+    * active: enables LACP unconditionally
+    * auto: enable PAgP if PAgP device is detected
+    * desirable: Enable PAgP unconditionally
+    * on: enable etherchannel only. Static etherchannel
+    * passive: enable LAC if LACP device detected
 * after you complete the port grouping, you can work on it like you would any single interface
-  * interface port-channel (group number) [usually something like po(num)]
+  * `interface Port-channel (group number)` [usually something like po(num)]
   * now you can run any port commands on it, like switchport mode trunk
 * interfaces in group need same configrations, like speecd and duplex
 
-* show etherchannel summary
+* `show etherchannel summary`
 
-### What about routed ports?
-* broadcast storms are no concern on routed switches
-* to enable etherchannel on routed switch, enter interface range config
-  * no switchport
-  * channel-group (num) active 
-
+### Configuration
+* load balancing
+  * `show etherchannel load-balance` to see load balance method
+    * src-dst-ip or src-dst-mac
+  * `port channel load-balance (src-dst-mac/ip)` to change the load balance 
+* etherchannel configuration
+  * 3 modes, PAgP, LAcP, Static
+  * `interface range (range of ports to be etherchanneled)`
+  * `channel-group (group num) mode (mode)`
+    * auto and desirable for PAgP
+      * desirable tries to form etherchannel
+      * auto only forms a channel if the other side is desirable
+    * active and passive for LACP
+      * respectively the same as the previous 2
+    * on is for static
+      * only works with on
+  * `channel-protocol (static/pagp/lacp)`
+    * not needed, only if you need to reconfigure the etherchannel
+  * with etherchannel, all ports in the channel must have the same speed, duplex, vlans, otherwise the ports that do not match the rest will be excluded
+  * `show etherchannel summary` shows all the channels
+* layer 3 etherchannel
+  * uses layer 3 connection vs layer 2
+  * routed ports better because NO STP NEEDED AT ALL
+  * routing doesnt broadcast, so there is no chance of a storm
+  * `interface range (range)`
+  * `no switchport`
+  * `channel-group (num) mode (mode)`
+  * `interface port-channel (num)`
+  * configure IP address and routes
+**WHENEVER YOU DO ANYTHING WITH ETHERCHANNEL, DO CONFIGURATIONS ON THE PORTS FROM THE PORT-CHANNEL INTERFACE!!!!!**
+* also remember to enable routing with `ip route` on multilayer switches when they are routing to one naother
 ## Dynamic Routing
 * in contrast to static routing. Static routing is manual configuration of routes with the ip route. 
 * This involves configuring a dynamic routing protocol. Dynamic, because it isnt fixed
@@ -1364,12 +1405,12 @@ Unusable Route          255
   * multicast only received by devices included in a multicast group
 
 ### RIP configuration
-1. router rip, (rip config mode)
-2. version 2, (to set to version 2)
-3. no auto-summary 
+1. `router rip (rip config mode)`
+2. `version 2`, (to set to version 2)
+3. `no auto-summary `
    * auto summary automatically converts networks to classful networks, and advertises those networks as such
    * This is bad, disable it with this command
-4. network (network ip)
+4. `network (network ip)`
    * look for interfaces with an IP address that is in the specified range
    * active RIP on the interfaces that fall in the range 
    * form adjacencies with connected RIP neighbors
@@ -1394,7 +1435,7 @@ Unusable Route          255
      * to share this, do:
        * default-information originate
      * rip treats all routes as equal, given same num hops. Thus it load balances on all routes with equal hops
-  5. do show ip protocols
+  5. do `show ip protocols`
       * shows IP protocol information 
       * shows protocols, version information, and protocol specific characteristics
       * maximum paths refers to the max number of paths used for load balancing
@@ -1418,18 +1459,18 @@ Unusable Route          255
 * still not as widespread as OSPF
 
 ### EIGRP configuration
-* router eigrp (autonomous system number), enter router config mode
+* `router eigrp` (autonomous system number), enter router config mode
   * autonomous system number basically is a grouping number. All routers with the same autonomous system number for EIGRP will be able to form an adjacency and share route information 
   * thus routers that want to communicate must have the same number
-* no auto-summary
+* `no auto-summary`
   * same as RIP, always do this to prevent advertisement of classful advertisement
-* passive-interface (interface)
+* `passive-interface (interface)`
   * do this on any interface that has no EIGRP routers connected
-* network (ip)
+* `network (ip)`
   * activate EIGRP on any interface that matches the IP range
   * command assumes classful, and looks for any IPs that match its network octets 
 * we can also do something like 
-  * netowrk 172.16.1.0 0.0.0.15
+  * `netowrk 172.16.1.0 0.0.0.15`
   * when 172.16.1.0/28 is connected to interface g0/2
   * this will make g0/2 an EIGRP interface
   * what is 0.0.0.15??? why is it used as the subnet mask?
@@ -1455,7 +1496,7 @@ Unusable Route          255
 * OSPF uses wildcard as well
 
 ### EIGRP continued
-* do show ip protocols
+* `do show ip protocols`
 * eigrp uses delay and bandwidth by default
 * shows router ID as well to identify it within the AS, autonomous system
 * Router ID is determined by:
@@ -1463,9 +1504,9 @@ Unusable Route          255
   * highest IP address on a loopback interface (virtual internal interface)
   * highest IP address on a physical interface
   * to change, do :
-    * eigrp router-id (ip address to set as ID)
+    * `eigrp router-id (ip address to set as ID)`
   * in the routing table:
-    * do show ip route
+    * `do show ip route`
     * EIGRP routes are indicated by D
     * RIP is indicated by R
     * metrics get very high, harder to understand
@@ -2612,6 +2653,7 @@ where do syslog messages go?
 
 ### FTP
 * TCP port 20 and 21
+* listens on 21, since connection is initiated using control connection
 * usernames and passwords supported, but no encryption
 * FTPS (ftp over ssl and tls) is used to upgrade to security
 * SFTP SSH file transfer protocol can be used for greater security
