@@ -1459,13 +1459,15 @@ Unusable Route          255
 * still not as widespread as OSPF
 
 ### EIGRP configuration
-* `router eigrp` (autonomous system number), enter router config mode
+* `router eigrp (autonomous system number)`, enter router config mode
   * autonomous system number basically is a grouping number. All routers with the same autonomous system number for EIGRP will be able to form an adjacency and share route information 
   * thus routers that want to communicate must have the same number
 * `no auto-summary`
   * same as RIP, always do this to prevent advertisement of classful advertisement
-* `passive-interface (interface)`
+* `passive (interface)`
   * do this on any interface that has no EIGRP routers connected
+  * also do this on loopbacks, because if the loopbacks are not passive, router advertisements will be sent out of them, to nobody
+    * waste of resources
 * `network (ip)`
   * activate EIGRP on any interface that matches the IP range
   * command assumes classful, and looks for any IPs that match its network octets 
@@ -1511,6 +1513,27 @@ Unusable Route          255
     * RIP is indicated by R
     * metrics get very high, harder to understand
 
+### EIGRP metric
+* uses bandwidth and delay to calculate metric
+* metric = bandwidth (of slowest link in path to destination) + delay(in path to destination) basically 
+* this is used to calculate which route packets will take
+* this is takes into account the whole route
+
+### Terms
+* feasible distance: this routes metric value to the route destination. whole route metric
+* reported distance: advertised distance. neighbor's metric value to reach destination
+* `show ip eigrp topology` shows all known routes by EIGRP
+  * the first number in the () is the feasible distance, the second is reported
+* successor: best route, lowest metric to destination
+* feasible successor: alternate route, not the best, but meets feasibility condition
+* feasibility condition: a route is a feasible successor if its reported distance is lower than the successor routes feasible distance
+  * why? loop prevention
+* unequal cost load balancing: allow load balancing even if one route has different metric from another
+* `show ip protocols`
+  * if eigrp maximum metric variance is 1, ECMP load balancing. No unequal cost. Load balancing only over equal metric routes
+* `variance 2`
+  * feasuble successor routes with a feasible distance up to 2x the size of the successor route can be used for UCLB
+
  
 ## first hop redundancy protocol FHRP
 * when we have multiple connections to the internet with several routers, you can have a backup when failures occur
@@ -1528,6 +1551,12 @@ Unusable Route          255
 * Both routers in the VIP will receive the request. The active router will send the reply to the requesting client
   * each FHRP also uses a virtual mac address!
 
+### Loopback COnfiguration
+* virtual interface on router
+* `interface loopback (number)`
+* `ip address x.x.x.x 255.255.255.255` (usually something like 1.1.1.1)
+* why? this is the default router ID if not manually configured. Used for routing
+* to configure default id, `eigrp router-id (ip address)`
 ### Failsafe
 * when standby router doesnt receive any hello, it goes to active
 * since both routers shared a mac address and ip, with the VMAC and VIP, all that needs to be changes are the switch mac address tables. The clients already know where to send things
@@ -1536,75 +1565,393 @@ Unusable Route          255
 * what if R1 Comes back online? it will become the standby router. The backup router wont auto give up its role. You can configure the original active router to take back the active state. This is called preemption
 
 NOTE THAT ALL GROUP NUMBERS ARE IN HEXIDECIMAL
+
+## OSPF
+* Link State protocol
+  * very different than rip and EIGRP
+    * routing by rumor
+  * link state:
+    * routers have a complete network map
+    * each router advertises interface and route information. 
+    * repeated until all routers have the exact same network map
+    * each route uses the map to calculate the best route
+    * more resources shared, more reosurce heavy
+    * faster, more efficient when responding to changes
+### OSPF function
+* Open Shortest Path First
+* Dijkstras algorithm
+* 3 versions
+  * v2 uses ipv4. Most important for the exam
+  * v3 for ipv6
+* information stored in LSDB (link state database), collected from LSA (link state advertisements)
+* routers flood LSAs until all routers have same map in the LSDB
+  * LSA: 
+  * contains
+    * router ID: loopback
+  1.  LSA floods all network interfaces
+  2.  all routers share same LSDB (full of LSAs)
+  3.  each router uses SPF (dijsktra) algorithm to calculate best route
+  4.  LSA re-flooded every 30 minutes
+
+### OSPF Areas
+* routers flood everything in an OSPF *Area* 
+  * use areas to divide network
+  * if a network is huge, 500 networks with many subnets each, this is bad because:
+    * SPF takes more time to calculate routes
+    * much more processing power
+    * large database
+    * every smallest change causes a flood on all routes.
+  * dividing the network into smaller areas prevents these issues
+  * take a network which has trees of routers branching off a central branch (backbone) of network infrastructure
+  * each router at the border of this backbone and their branches get their own area
+  * the backbone is area 0. All other areas must connect to this. You cannot nest layers
+  * if a router's interfaces are all inside an area, they are internal to that area
+  * if the router is on the border between two areas is an area border router, ABR
+    * abr can only connect to maximum of 2 areas
+  * any router connected to the backbone area is also a backbone router
+  * ASBR: autonomous system boundary router. connect backbone to outside network using a default route
+  * intra area route: route to a network in the same area
+  * interarea route: route to destination in another OSPF area
+* every area must be contiguous. Two areas cannot be separated by another area
+* you cannot nest one area under another. All areas must have an ABR to the backbone
+* OSPF interfaces in the same subnet must be in teh same area
+
+### Basic Configuration
+* to enter OSPF config mode
+  * `router ospf (process id)`
+  * one router can have many of these, note
+  * routers with different PIDs can become neighbors. PID doesnt make a difference. Unrelated to area
+* to apply OSPF area to subnet
+  * `network (network ip) (network wildcard) area (area number)`
+  * look for any interface with the IP address in the range specifies
+  * activate OSPF on that interface
+  * become OSPF neighbors to any routers connected on that interface 
+* `passive (interface)`
+  * configure passive OSPF interface
+  * no OSPF hello messages on this interface
+  * the passive interface will tsill be advertised to other routers
+* advertise default route
+  * `ip route 0.0.0.0 0.0.0.0 (next hop to ISP)`
+  * from router config mode
+    * `default-information originate`
+* `show ip protocols`
+  * routing protocol: ospf (pid)
+  * router ID:
+    1. manually configured
+      * from ospf config
+        * `router-id (id)`
+        * `clear ip ospf process` to restart the ospf process for change to take effect. VERY BAD IDEA. this will take the router down and reset all ip routes
+    2. otherwise highest IP on loopback
+    3. else highest IP on physical interface
+  * contains OSPF router type (internal, ABR, etc)
+  * number of areas in router
+  * maximum path: 4 by default. 
+    * no unequal cost load balancing
+    * support ECMP load balancing over 4 paths by default
+    * `maximum-paths (1-32)` to change maximum paths to load balance over
+  * routing for networks:
+    * what networks is OSPF routing for?
+  * routing information sources:
+    * list neighbors and their router IDs
+  * distance: 110 by default
+    * `distance (number)` to make OSPF higher priority
+
+### OSPF metric
+* cost
+* auto calculated based on bandwidth of interface
+* dividing reference bandwidth by interface bandwidth
+* reference is 100 mbps
+* 10mbps interface would have cost of 10
+* lowest cost is 1, all numbers lower than 1 round up to 1
+* from router config mode `auto-cost reference-bandwidth (megabits per second)` to change the reference
+  * if you dont change it to be higher, a 10000 mbps connection will have the same cost as a 1000 mbps connection. One is significantly faster but isnt regarded as such
+* reference should always be higher than the hgihest speed interface
+* the cost must be consistent over all the ospf routers
+* entering loopbacks costs 1 always
+
+#### manual interface cost
+* to configure the cost of an interface, enter interface config mode
+* `ip ospf cost (1-65535)`
+* you could also change the official bandwidth of an interface
+  * changing bandwidth doesnt change speed
+  * bandwidth is an abstract value used to calculate routes
+  * used in other calculations. Best to not change this
+  * `bandwidth (kilobits)`
+* use the change cost command!
+* to see ospf information, `show ip ospf interface brief`
+
+### OSPF Neighbors
+* neighboring is how network map data is shared
+* main task of ospf configuration
+* upon neighboring, they automatically do the work of sharing network information
+* upon OSPF activation, router sends OSPF hello messages every interval, defined by the hello timer
+  * by default the hello timer is 10 seconds
+  * sent on multicast 224.0.0.5 for OSPF 
+  * remember, multicast is like broadcast, but it is only received by devices with the same multicast address
+* OSPF messages in the IP header, with protocl field value of 89
+
+### neighbor states
+1. down state
+   1. activated
+   2. send hello message to 224.0.0.5
+      1. includes the sender router ID
+      2. also neighbor RID
+         1. this is 0.0.0.0 on first hello, since it doesnt know its neighbor
+2. init state
+   1. hello message received
+   2. add entry for sender to OSPF neighbor table
+   3. relationship in init state
+   4. hello packet received, but the router that received the packet doesnt see its own RID in the packet
+3. two way state
+   1. the hello packet is sent back, container both router RIDs
+   2. the first router adds the RID in the table
+   3. the first router sends back its own RID
+   4. in other words, router received hello packet with its own RID in it
+   5. if both are in two way state, all conditions are met to be ospf neighbors. Can share LSAs to build the common LSDB
+      1. designated router and backup designated router DR BDR will be set up here
+4. Exstart state
+   1. prepare to exchange LSAs
+   2. choose which router starts exchange: which router is the master, and which is the slave
+   3. higher RID will become master
+   4. then exchange database description packets
+      1. one router sends a DBD saying it will be the master
+      2. if the receiving router has higher RID, it will deny and say it will be the master. Otherwise it accepts
+5. exchange state
+   1. exchange DBDs containing LSAs in the LSDB
+   2. no detailed information, just basics
+   3. routers compare DBD information against their own LSDB 
+      1. during comparison, they determine what LSAs theyre missing from teh LSDB, and ask for those LSAs
+6. Loading state
+   1. link state request LSR to request the missing LSAs
+   2. "give me the LSAs"
+   3. "ok"
+   4. LSAs sent in Link State Update messages, LSUs
+   5. on receiving the LSU, the router returns an LSAck to acknowledge reception
+7. full state: 
+   1. routers have the same LSDB
+   2. fully adjacent
+   3. continue to send and receive hello packets
+   4. every time the hello is received, the dead timer, 40 seconds, is reset
+   5. if dead timer runs out, the neighbor is removed
+   6. continue to share LSAs as network evolves to ensure accurate, complete network maps in the LSDB
+
+### Overarching workflow for OSPF
+1. become neighbors with routers in the same area
+2. exchange LSAs with neighbors
+3. calculate the best routes and insert to routing table
+
+### OSPF commands
+* `show ip ospf neighbor`
+  * shows state, dead time, address, interface, and neighbor id
+* `show ip ospf interface`
+  * default hello and dead timers
+  * neighbor counts
+  * neighbor list
+* activate OSPF on interface directly
+  * from interface config mode
+  * `ip ospf (pid) area (area)`
+  * this way we dont need to know network ID or wildcard, we just need to know what interface to activate on
+* `passive default`
+  * set interfaces to ospf passive (router config mode)
+  * `no passive (interface)` to make ospf active
+
+### Loopback Interfaces
+* virtual router interface
+* always up, unless manually shut down
+* not reliant on physical interface status
+  * when a physical interface goes down, the IP connected to it is gone. How to other routers reach the router using OSPF if its IP disappears?
+* provides consistent IP address to identify the router, and route traffic
+* if R1 has the ip address 1.1.1.1, even if a physical interface goes down, routers can send packets to it via another interface
+
+### Network Types
+* type of connection between neighbors
+* types
+  * broadcast
+    * default on ethernet, FDDI (fiber distributed data interfaces, unimportant)
+    * routers dynamically discovber neighbors using multicast address 224.0.0.5
+    * designated router dr, and backup designated router bdr must be elected on each subnet
+      * only DR with no neighbor
+      * all subnets need DR
+    * routers not dr or bdr are drother
+    * in other words, on a subnet, one router must be DR, another must be BDR, all others are DROther
+  * point to point
+    * PPP (point point protocol), HDLC (high level data link control)
+  * non broadcast
+    * default for frame relay and x.25  interface
+    * neighbors manually configured
+* all ethernet OSPF are broadcast network types
+
+### DR and BDR election
+* order of priority
+1. highest OSPF interface priority
+2. highest OSPF router IDs
+
+* first place becomes DR, second place becomes BDR
+* default OSPF interface priority is 1 for ALL interfaces
+* `show ip ospf interface (interface)` for interface OSPF information
+* to change priority, `ip ospf priority (1-255)`
+  * the `nbrc f/c` field shows ratio of full connections to total connections
+* this is not pre-emptive. When DR and BDR are selected, they will keep the role until OSPF is reset
+* if the DR goes down, BDR takes its place and elects a new BDR
+* DROther routers will only go to full state with DR and BDRs
+  * with other DROthers, they are in the two way state
+* DROthers only exchange LSAs with the DR and BDR
+* this prevents LSA congestion on the network, while allowinh gfull LSDB coverage
+  * DR and BDR are mutlicast using 224.0.0.6
+
+### Point to Point connection
+* enabled on serial interfaces using PPP or HDLC encapsulations
+* ethernet for serial connections
+* send and receive OSPF hello on 224.0.0.5
+* DR and BDR not elected. No need
+* in a point to point connection, its just one router connected to another
+* very old technology
+* what is serial interface?
+
+#### Serial interfaces
+* `interface s(interface num)` 
+* one side functions as DCE, data communications equipment
+* the other sepcifies DTE, Data terminal equipment
+* DCE side needs to specify clock rate of the connection
+* `clock rate (number)`
+* then configure IP like any other
+
+* on routers, default is HDLC protocol for the serial connection
+* layer 2 encapsulation
+* `encapsulation ppp/hdlc` must match on both ends of connection
+* which side is DTE and DCE?
+  * `show controllers (interface)`
+
+### OSPF network type config
+* `ip ospf network (broadcast, non broadcast, point to point, point to multipoint)`
+* manually configure what network type to use
+* if one router is connected to antoher, even by ethernet, you can make it point to point
+
+### potential problems
+* two OSPF routers in different areas cannot connect
+* must be in same subnet to be neighbors
+* OSPF process must not be shutdown
+* to remove router id, `no router-id` 
+  * this will not require an OSPF reboot if the router isnt a neighbor of anything
+* hello and dead timers must match among all the routers
+  * from interface config mode
+  * `ip ospf dead/hello-interval (seconds)`
+  * `no ip ospf dead/hello-interval`
+* authentication settings must match
+  * OSPF can be configured to have a password
+  * `ip ospf authentication-key (password)` to set password
+  * `ip ospf authentication` to enable authentication
+  * only ospf routers with the same authentication key configured will be able to be neighbors
+* IP MTUs must be the same
+  * maximum transmission unit
+  * if they are different, they can become neighbors, but wont communicate properly
+  * `no ip mtu` to reset ip mtu settings
+* OSPF network types should match
+
+### LSA Types
+* 11 types
+* 3 important ones
+  * type one (router lsa)
+    * all routers generate this
+    * identify router using ID
+    * list networks attached to OSPF interfaces
+  * type two (network lsa)
+    * generated by DR of the multi-access (broadcast) networks
+    * lists routers attached to network
+  * type five (as-external LSA)
+    * gneerated by ASBRs to destinations outside the AS
+* `show ip ospf database` to see lsdb
+
+## FHRP
+* first hop redundancy protocols
+* HSRP hot standby router protocol
+* VRRP virtual router redundancy protocol
+* GLBP gateway load balancing protocol
+
+### What do they do?
+* router failures happen
+* where STP provided switch redundancy, FHRP provides router redundancy to external networks
+* this creates a challenge, since each router has its own IP address
+* each host will have only ONE default gateway, so how do they know to change their default gateway on failure?
+* how do we fix this? assign a VIP, virtual IP address to the router group, and set that VIP as the default gateway for hosts
+* the backup router takes over the address when the main router fails
+
+#### FHRP process
+1. routers join the same VIP
+2. send multicast hello's to one another
+3. determine which router is active, or standby
+   1. active routers are the ones routing for the network
+   2. standby will step in if active router fails
+4. when a host uses ARP on the VIP, the active router returns the FHRP virtual mac address
+5. if the active router goes down, it stops sending hello's to the standby routers
+   1. if the standby routers stop receiving, they decide the same way as originally who becomes active
+   2. when this happens, switches must be updated to reflect the change
+   3. new active router sends gratuitous ARP replies (ARP replies without requests, bradcast), to tell the switches where the VMAC is
+   4. the switches relearn what interfaces will let them reach the VMAC
+6. if the former active router returns, by default FHRPs are non pre-emptive
+   1. the new active router stays as the active router
+   2. they can be configured to be pre-emptive so the previous active router takes back control
+
+* so briefly:
+  1. virtual IP configured on two routers, virtual mac generated for virtal IP
+  2. active and standby routers are elected
+  3. end hosts configured to use VIP as gateway
+  4. active router replies to ARP using VMAC
+  5. if router fails, standby takes control, and sends gratuitous arps. now default gateway
+  6. if old active router comes back, it wont take the active role back
+     1. this is unless preemption is configured
+
 ### HSRP
-* Hot standby router protocol
-  * cisco proprietary
-  * active and standby router are elected
-  * version 1
-    * ipv4 only
-  * version 2
-    * ipv6 and groups
-    * subnet support
-  * multicast Ipv4 address:
-    * v1: 224.0.0.2
-    * v2: 224.0.0.102
-  * Virtual mac address:
-    * v1 = 0000.0c07.acXX (xx = hsrp group number)
-    * v2 = 0000.0c8f.fXXX (xxx = hsrp group number)
-  * load balancing
-    * when you have multiple subnets and or vlans, you can configure a different active router for each subnet in order to load balance over several routers
-    * different root bridge in each vlan
-    * you can configure a different active router in each subnet as well
-    * for example, 2 routers, one is used for the active and one as the standby for vlan1, and vice versa for vlan2
+* hot standby router protocol
+* cisco proprietary
+* active and standby routers elected
+* versions 1 and 2, for ipv4 and 6 respectively
+* use multicast 224.0.0.2 and 224.0.0.102 for HSRP hello messages on v1 and 2 respectively
+* virtual mac addresses are 0000.0c07.acXX and 0000.0c9f.fXXX are the VMACs used, where XXX are the group numbers
+* you can also configure a different active router for each subnet/vlan to load balance
+
+* for separate subnet/vlan balancing:
+  * each subnet shares the same VIP address
+  * however, on the separate subnets, the active router is set to be different
+
 ### VRRP
 * virtual router redundancy protocol
-  * open standard. 
-  * Cisco can run it, nearly identical
-  * instead of active and standby, it uses master and backup routers
-  * functionally exactly the same 
-  * multicast ipv4 address is 224.0.0.18
-  * virtual mac address is different: 0000.5e00.01XX (XX = VRRP group number)
-    * group number is in hexidecimal this time. C8 corresponds to 200 for instance
-  * you can configure a different master for each subnet or vlan to load balance
-  * all that is different is the naming scheme
-  * remember: subnet is layer 3, vlan is layer 2
+* open standard
+* nearly identical to HSRP
+* master and backup instead of active and standby
+* 224.0.0.18 for ipv4 multicast
+* VMAC 0000.5e00.01XX where XX is vrrp group number
+* each subnet has a different master router
+* note: hosts in same vlan should be ont eh same subnet. THis isnt necessary per se, but its the best convention
 
 ### GLBP
 * gateway load balancing protocol
-  * cisco proprietary
-  * load balances among several routers in a single subnet
-  * AVG, active virutal gateway is elected
-  * up to four AVFs (active virtual forwarders) are assigned by the avg itself can be an avf too
-  * each avf acts as a default gateway for some hosts
-  * multicast ipv4 address is 224.0.0.102
-  * virtual mac address: 0007.b400.XXYY (XX = GLBP group number, YY=AVF number)
+* cisco proprietary
+* load balances on routers IN THE SAME SUBNET!
+* single AVG, active virtual gateway is elected
+* four AVFs assigned by AVG, max 4
+* each avf acts as a default gateway for some hosts in subnet
+* multicast ipv4 is 224.0.0.102
+* vmac is 0007.b400.XXYY
+  * XX = GLBP group number
+  * YY = AVF number
 
-### configuration
-* HSRP
-* HSRP is configured on the interface directly
-  * interface (interface number)
-  * configured with standby command
-  * standby (group number)
-    * good practice to match number with vlan number
-    * the group numbers must match between routers
-  * configure virtual ip
-    * standby (group number) ip (Vip address)
-  * configure if active router
-    * standby (group number) priority (priority number)
-    * highest priortiy will take the active
-    * if any equal priorities, highest ip address value will become active
-    * default is 200
-  * preemption
-    * standby (group number) preempt
-    * enables preemption on selected router so that it retakes active after it is restarted on error. Only if it has highest priority
-  * to change version:
-    * standby version (1/2)
-    * version 1 and 2 are not compatible
-
-* both routers need same VIP
-* show standby
-  * show standby shows standby information
-
+### HSRP configuration
+1. enter interface config mode on network connected interface
+   * `interface (interface)`
+2. `standby (group number)` to confiugre HSRP
+   1. best to match vlan group number to the HSRP group
+   2. must be the same between both routers
+3. `standby version (1/2)` to configure version
+4. `standby (group number) ip (VIP)`
+   1. configure the virtual IP
+5. `standby 1 priority (0-255)`
+   1. set the priority so routers can decide which will be active
+   2. highest priority gets active
+   3. if both routers have same priority, highest IP address is active
+6. `standby (group number) preempt` 
+   1. enable preemption
+7. `show standby` shows standby information
 ## TCP and UDP
 ## Layer 4 
 * the transport layer
