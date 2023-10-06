@@ -1953,7 +1953,7 @@ NOTE THAT ALL GROUP NUMBERS ARE IN HEXIDECIMAL
    1. enable preemption
 7. `show standby` shows standby information
 ## TCP and UDP
-## Layer 4 
+### Layer 4 
 * the transport layer
 * encapsulates packet with transport header
 * provides (or not provide) various services to applications
@@ -2072,6 +2072,7 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
   * HTTP 80
   * POP3 110
   * HTTPS 443
+  * OSPF 89
 * UDP
   * DHCP server 67
   * DHCP client 68
@@ -2135,10 +2136,10 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
   * if you have a mask that isnt a multiple of 4, you must break down individual hex characters into binary, and set all bits not included in the mask to 0. The value converted back to hex is the value in the network address
 
 ### configuration
-1. ipv6 unicast routing (enable routing for ipv6)
-2. interface (interface)
-3. ipv6 address (ipv6 address)
-4. no shutdown
+1. `ipv6 unicast routing (enable routing for ipv6)`
+2. `interface (interface)`
+3. `ipv6 address (ipv6 address)`
+4. `no shutdown`
 
 * note that every interface has 2 ipv6 addresses. On eof these is auto generated link local address. learn about them later
   * ipv4 has these, but not automatic
@@ -2155,9 +2156,9 @@ both provide layer 4 addressing with ports and layer 4 multiplexing
   * then invert the 7th bit. 1 -> 0 
   * this becomes the host portion of the ipv6
 * config
-  1. from config mode, enter int (interface)
-  2. ipv6 address (/64 address network portion)/64 eui-64
-  3. no shutdown
+  1. from config mode, enter` int (interface)`
+  2. `ipv6 address (/64 address network portion)/64 eui-64`
+  3. `no shutdown`
 * why invert the 7th bit?
   * UAA
     * universally administered address
@@ -2394,45 +2395,45 @@ match only by source IP
   * can use the numbers 1-99 or 1300-1999
   * from config:
     * method set 1
-      * access-list (number) deny | permit source_ ip wildcard-mask
-      * access-list 1 deny 1.1.1.1 0.0.0.0, where 1.1.1.1 is the ip and 0.0.0.0 is the wildcard mask, specifying it as a /32 ip
-      * you could also use access-list 1 deny host 1.1.1.1
-      * if you just enter access-list 1 deny 1.1.1.1, it will block that specific ip, since the wildcard mask defaults to 0.0.0.0.
+      * `access-list (number) deny | permit source_ip wildcard-mask`
+      * `access-list 1 deny 1.1.1.1 0.0.0.0`, where 1.1.1.1 is the ip and 0.0.0.0 is the wildcard mask, specifying it as a /32 ip
+      * you could also use `access-list 1 deny host 1.1.1.1`
+      * if you just enter `access-list 1 deny 1.1.1.1`, it will block that specific ip, since the wildcard mask defaults to 0.0.0.0.
       * in order to permit all other connections, you would add:
-        * access-list 1 permit any
-        * or, access-list 1 permit 0.0.0.0 255.255.255.255 (ip wildcard combo is the same as any)
+        * `access-list 1 permit any`
+        * or, `access-list 1 permit 0.0.0.0 255.255.255.255` (ip wildcard combo is the same as any)
       * to add a comment, you can add a remark
-        * access-list 1 remark ## (description) ##
+        * `access-list 1 remark ## (description) ##`
       * to see list of access lists:
-        * ip lists: do show ip access-lists
-        * all lists: do show access-lists
-      * do show running-config | include access-list to only show access list entries
+        * ip lists: `do show ip access-lists`
+        * all lists: `do show access-lists`
+      * do `show running-config | include access-list` to only show access list entries
     * method set 2
       * enter the config mode for the ACL
-        * ip access-list standard 1
+        * `ip access-list standard 1`
         * example:
-          * deny 192.168.1.1
-          * permit any
+          * `deny 192.168.1.1`
+          * `permit any`
   * applying the ACL
-    * interface (interface number)
-    * ip access-group (number) (in | out)
+    * `interface (interface number)`
+    * `ip access-group (number) (in | out)`
 
 ##### NAMED
 * standard named: identified by name
   * to config named ACLs, you must enter named acl config mode
-      * ip access-list standard (acl-name)
+      * `ip access-list standard (acl-name)`
     * once in the config mode, you can add the ACEs
-      * deny | permit source_ip wildcard-mask
+      * `deny | permit source_ip wildcard-mask`
       * add remarks the same as with the numbered acls
-      * interface (interface)
-      * ip access-group (acl name) in | out
-      * show access-lists
-      * show running-config | section access-list
+      * `interface (interface)`
+      * `ip access-group (acl name) in | out`
+      * `show access-lists`
+      * `show running-config | section access-list`
 
 ##### Advantages of config mode
 * easily delete ACEs with the no command
   * if you try to delete a specific entry when in global config mode, it will just delete the whole acl
-  * no (entry number)
+  * `no (entry number)`
   * this easily deletes 
   * on the other hand if you try to delete from global config mode, you can only delete the entire ACL
 * you can insert new entries between other entries by specifying sequence number
@@ -2440,7 +2441,7 @@ match only by source IP
   * this is why the incrememnt on the numbered acls is 10, if it was just 1 you could insert a new number between 3 and 4. Dont take for granted python datastructures man!
 
 ##### Resequencing ACLs
-* ip access-list resequence (acl-id) (starting-sequence-nuber) (increment)
+* `ip access-list resequence (acl-id) (starting-sequence-nuber) (increment)`
 * example:
   * ip access-list resequence 1 10 10
     * 1 = acl id
@@ -2453,10 +2454,10 @@ remember: extended ACLs should be applied as close to the source as possible
 same as standard, but can match packets based on source OR destination ip, or source/destination port
 * numbered have the ranges 100 -199 and 2000 - 2699
 * command:
-  * access-list (number) (permit | deny) (protocol/port) (src ip) (dest ip)
+  * `access-list (number) (permit | deny) (protocol/port) (src ip) (dest ip)`
 * config mode:
-  * ip access-list extended {name | number}
-    * (sequence number) (permit | deny) (protocol) (src ip) (dest ip)
+  * `ip access-list extended {name | number}`
+    * `(sequence number) (permit | deny) (protocol) (src ip) (dest ip)`
   * you can see all the metrics for filtering with deny ? from config mode 
   * protocol number: remember, encapsulated field of ipv4 packet which specifies protocol, like tcp or udp
   * you can also just use the name, like tcp or eigrp
@@ -2467,13 +2468,13 @@ same as standard, but can match packets based on source OR destination ip, or so
     * 89: ospf
     * ip: use this if you want to block all IP packets regardless of encapsulated protocol
   * source IP: You must include the wildcard like with standard ACL, or you can use the host style. You cant do neither
-  * source ip any blocks all
+  * source `ip any` blocks all
   * destination ip:
     * same a ssource IP
   * port numbers
     * to specify sourc eport, specify it after source host and wildcard
     * likewise, for destination port specify it after the destination host and wildcard
-    * deny tcp (src ip and wildcar) eq (source port number) (destination ip) (destination wildcard) eq (destination port number)
+    * `deny tcp (src ip and wildcar) eq (source port number) (destination ip) (destination wildcard) eq (destination port number)`
     * eq: equal to
     * gt: greater than
     * lt: less than
@@ -2507,35 +2508,35 @@ Layer 2 discovery protocols
 * despite using multicast, the message is not sent to several devices
   * neighbors dont forward the packets, its a one stop message
 * by default these messages are sent once every 60 seconds out of all interfaces with an up state
-* The CDP neighbor table hods for 180 seconds. If a device doesnt receive a message from a device in 180 seconds it drops the value from cdp table
+* The CDP neighbor table holds for 180 seconds. If a device doesnt receive a message from a device in 180 seconds it drops the value from cdp table
 * 2 versions of cdp, cdpv2 by default. cdpv1 is very old and obsolete
 
 ### CDP Commands
-* show cdp: show cdp information
-* show cdp traffic: show cdp history
-* show cdp interface: show what interfaces have active cdp on them
-* encapsulation: shows type of ethernet being used
-* show cdp neighbors:
+* `show cdp`: show cdp information
+* `show cdp traffic`: show cdp history
+* `show cdp interface`: show what interfaces have active cdp on them
+* `encapsulation`: shows type of ethernet being used
+* `show cdp neighbors`:
   * lists device ID, like switch1 or router4
   * connected interface, what interface is the device ID connected to?
   * holdtime, how much time is left to receive a new CDP advertisement?
   * capability, what these letters mean is on the top when command output
   * platform: model of neighboring device.
 * to get additional information, do:
-  * show cdp neighbors detail
+  * `show cdp neighbors detail`
   * shows vlan, and duplex setting
   * helps show vlan mismatch
 * to get filtered output, do
-  * show cdp entry (name, like R2)
+  * `show cdp entry (name, like R2)`
 * CDP overall is useful for debugging network structures
 * to enable cdp
-  * cdp run
+  * `cdp run`
 * to disable cdp
-  * no cdp run
+  * `no cdp run`
 * to enable or disable cdp on an interface
   * from interface config mode
-    * cdp enable
-    * no cdp enable
+    * `cdp enable`
+    * `no cdp enable`
 
 ### LLDP
 * industry standard
@@ -2552,26 +2553,26 @@ Layer 2 discovery protocols
 * disabled on each interface by default
 * to enable, you must enable it globally then on each interface
 * enable globally
-  * lldp run
+  * `lldp run`
 * disable globally
-  * no lldp run
+  * `no lldp run`
 * on interface
   * enable transmission 
-    * lldp transmit
+    * `lldp transmit`
   * enable receiving
-    * lldp receive
+    * `lldp receive`
 * for lldp you need to enable both transmission and reception
 * lldp time config
-  * lldp timer (seconds)
-  * lldp holdime (seconds)
-  * lldp reinit (seconds)
+  * `lldp timer (seconds)`
+  * `lldp holdime (seconds)`
+  * `lldp reinit (seconds)`
 * show commands
-  * show lldp, basic statuses
-  * show lldp traffic: show traffic info
-  * show lldp interface: show lldp info for each interface 
-  * show lldp neighbor: the lldp connection table
-  * show neighbors detail: show detailed table information
-  * show lldp entry (name):  get detailed information for just one device name
+  * `show lldp`, basic statuses
+  * `show lldp` traffic: show traffic info
+  * `show lldp` interface: show lldp info for each interface 
+  * `show lldp` neighbor: the lldp connection table
+  * `show neighbors detail`: show detailed table information
+  * `show lldp` entry (name):  get detailed information for just one device name
 
 ## NTP
 ### Network Time Protocol
@@ -2587,7 +2588,7 @@ Layer 2 discovery protocols
 * `show logging` shows device logs
 
 ### Clock config
-* you can set the clock time using `clock set (hh:mm:ss) (DAY) (MONTH) (YEAR)`
+* you can set the clock time using `clock set (hh:mm:ss) (DAY) (MONTH (DECEMBER)) (YEAR)`
 * done from priveleged exec mode
 * hardware and software clocks are separate, and can be configured separately
 * hardware clock is calendar, software clock is clock
@@ -2596,6 +2597,7 @@ Layer 2 discovery protocols
 * you can also sync the calendar and clock using `clock update-calendar` (set calendar time to clock) or `clock read-calendar`
 * you can configure clock timezone using `clock timezone (timezone name) (hours offset from UTC)`
   * the timezone name doesnt do anything, just a label, thats why you need to specify time offset
+  * must do it in the global config mode
 * to configure daylight savings, do: `clock summer-time (time zone name) recurring (start date, week, week day, month, time) (end date in same format)`
 
 **cool command**: `nslookup (url/ip)` shows information regarding dns server ip addresses, and hostname aliases (url names)
@@ -2623,7 +2625,7 @@ Layer 2 discovery protocols
   * `+` means the server is a candidate but not actively being used
   * `- and x` mean the server isnt reliable and wont be used
   * `st` field displays stratum of server
-* `show ntp status` shows synchornization status, and the stratum level of the host
+* `show ntp status` shows synchornization status, and the stratum level of the hosts
 * what if I have some other routers nested deeper that I want to use a central router as an NTP server?
   * configure a loopback interface on the central router (see OSPF)
   * loopback interface is an address you can use to reach a device that is independent of physical interfaces
@@ -2760,20 +2762,28 @@ and remember what the release does
 * the DHCP message process works the same just with a middleman router
   
 ### Router as DHCP server
-* `ip dhcp excluded-address (ipv4 address range)`: this specifies IP addresses that wont be allocated to DHCP clients
+* `ip dhcp excluded-address (ipv4 address range)`: this specifies IP addresses that wont be allocated to DHCP clients. These excluded are called the reserved addresses
+  * if you just include a single address only that address will be blocked from entering dhcp pool
+  * global config mode
 * `ip dhcp pool LAB_POOL` to create DHCP pool and enter DHCP config mode
+  * remember dhcp pools only go on the server
   * subnet of addresses to be assigned to DHCP clients
   * also includes DNS server address and default gateway
 * to configure this range of addresses for the DHCP pool: `network (network address) (network mask / prefix length)`
 * `dns-server (ip)` configures what IP the dhcp will use as the default DNS server
-* `default-router (router ip)` configures what IP dhcp will use as the default gateway IP
+* `default-router (router ip)` configures what IP dhcp will use as the default gateway IP by clients connected to the network
+* `domain-name (domain name)`
 * `lease (num days) (hours) (minutes)` configures the standard lease time for DHCP or `lease infinite` (BAD IDEA)
 * last 3 must be done in DHCP config mode
 * `show ip dhcp binding` shows all current DHCP clients with DHCP addresses
+* `show ip dhcp pool` shows pool information
+* also, to get specific section from command, use |
+  * `do show running-config | section dhcp`
 
 ### Router as DHCP Relay Agent
 * enter interface config mode for interface connected to subnet with clients that want DHCP
 * `ip helper-address (DHCP server address)` to say what the dhcp server address is. For this, you need to have a route, either static or dynamic to the dhcp server
+  * should the configured on the interface closest to the clients that want to use the dhcp
 * remember, there is a special field in the DHCP message called CHADDR, client hardware address. This is a representation of the MAC address. This is necessary because if the DHCP request is forwarded on a relay, the source mac becomes the mac of the relay
 
 ### Router as DHCP client
@@ -2887,7 +2897,7 @@ where do syslog messages go?
 * `logging monitor (level)` enables logging to VTY lines
   * even if this is enabled, by default the messages will not be displayed to telnet or ssh users. To enable you must enter `terminal monitor`
   * that command must be used every time you connect using ssh or telnet. That creates a vty syslog session that expires after disconnection
-* `logging buffered (buffer size) (level)` sets a buffer size for logging to the specified size, and enbales buffer logging
+* `logging buffered (buffer size)` sets a buffer size for logging to the specified size, and enbales buffer logging
 * `logging (logging server ip)` or `logging host (server ip)` enable a logging server for log messages
 * `logging trap (level)` specifies logging level for the external logging server
 * if you get a log message while typing a command, this messes everything up, since the log appears in the middle of what youre typing
